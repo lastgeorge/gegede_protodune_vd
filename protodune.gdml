@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="ASCII"?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+  <define>
+    <position unit="cm" name="cryostat_gas_pos" x="369.75" y="0.0" z="0.0"/>
+    <position name="center"/>
+    <rotation name="identity"/>
+  </define>
+  <materials/>
+  <solids>
+    <box name="cryostat_shape" lunit="cm" x="789.6" y="854.4" z="854.4"/>
+    <box name="cryostat_argon_shape" lunit="cm" x="789.2" y="854.0" z="854.0"/>
+    <box name="cryostat_gas_argon_shape" lunit="cm" x="49.7" y="854.0" z="854.0"/>
+    <subtraction name="cryostat_steel_shape">
+      <first ref="cryostat_shape"/>
+      <second ref="cryostat_argon_shape"/>
+      <positionref ref="center"/>
+      <rotationref ref="identity"/>
+    </subtraction>
+    <box name="world_shape" lunit="cm" x="3000.0" y="3000.0" z="3000.0"/>
+  </solids>
+  <structure>
+    <volume name="world_volume">
+      <materialref ref="Air"/>
+      <solidref ref="world_shape"/>
+    </volume>
+  </structure>
+  <setup name="Default" version="0">
+    <world ref="world_volume"/>
+  </setup>
+</gdml>
