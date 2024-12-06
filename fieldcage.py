@@ -44,7 +44,6 @@ class FieldCageBuilder(gegede.builder.Builder):
         '''Construct the field cage geometry'''
         self._build_field_shaper_shapes(geom)
         self._build_volumes(geom)
-        self._place_field_shapers(geom)
 
         # Create volume for thick field shapers
         thick_vol = geom.structure.Volume(
@@ -188,11 +187,11 @@ class FieldCageBuilder(gegede.builder.Builder):
         self.add_volume(self.thick_vol)
         self.add_volume(self.slim_vol)
 
-    def _place_field_shapers(self, geom):
-        '''Place all field shapers in the geometry'''
+    def _place_field_shapers(self, geom, lar_volume, cryo_halfwidth):
+        '''Place all field shapers in the LAr volume'''
         
-        # Calculate starting position
-        start_x = -self.first_to_roof
+        # Calculate starting position including cryostat offset
+        start_x = cryo_halfwidth - self.first_to_roof
         
         # Place field shapers
         for i in range(self.n_shapers):
@@ -222,5 +221,5 @@ class FieldCageBuilder(gegede.builder.Builder):
                 pos = pos,
                 rot = rot)
             
-            # Add placement to the appropriate volume
-            # (This would typically be the cryostat volume)
+            # Add placement to the LAr volume
+            lar_volume.placements.append(place.name)

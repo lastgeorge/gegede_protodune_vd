@@ -15,7 +15,7 @@ class CryostatBuilder(gegede.builder.Builder):
                  Cryostat_x=None, Cryostat_y=None, Cryostat_z=None,  # Overall dimensions
                  SteelThickness=None,                                 # Membrane thickness
                  Argon_x=None, Argon_y=None, Argon_z=None,          # Inner argon volume
-                 HeightGaseousAr=None,                              # Height of gas argon layer
+                 FieldCage_switch = True, HeightGaseousAr=None,                              # Height of gas argon layer
                  BeamPlugRad=None, BeamPlugNiRad=None,             # Beam plug parameters
                  BeamPlugUSAr=None, BeamPlugLe=None,               # More beam plug params
                  **kwds):
@@ -32,6 +32,10 @@ class CryostatBuilder(gegede.builder.Builder):
             us_ar = BeamPlugUSAr,
             length = BeamPlugLe
         )
+
+        self.fieldcage_switch = FieldCage_switch
+
+    
 
     def construct(self, geom):
         # Main cryostat shape
@@ -84,45 +88,12 @@ class CryostatBuilder(gegede.builder.Builder):
         
         argon_vol.placements.append(gas_place.name)
 
-        # # Get the field cage volume from the builder
-        # if hasattr(self, 'builders'):
-        #     fc_builder = self.get_builder('fieldcage')
-        #     if fc_builder:
-        #         # Get all field cage volumes
-        #         for i in range(fc_builder.n_shapers):
-        #             # Calculate position for each field shaper
-        #             x_pos = (self.dim[0]/2.0 - self.first_to_roof - 
-        #                     i * fc_builder.separation)
-                    
-        #             # Determine if this should be slim or thick
-        #             is_slim = (i < 36) or (i > 77)
-        #             vol = fc_builder.get_volume('slim' if is_slim else 'thick')
-                    
-        #             # Create position and rotation for this field shaper
-        #             pos = geom.structure.Position(
-        #                 f"fc_pos_{i}",
-        #                 x = x_pos,
-        #                 y = Q('0cm'),
-        #                 z = Q('0cm') if not is_slim else 
-        #                     0.5*fc_builder.fc_params['length'] + 
-        #                     fc_builder.fc_params['tor_radius'])
-
-        #             rot = geom.structure.Rotation(
-        #                 f"fc_rot_{i}",
-        #                 x = Q('90deg') if is_slim else Q('0deg'),
-        #                 y = Q('0deg'),
-        #                 z = Q('90deg') if is_slim else Q('0deg'))
-
-        #             # Create placement
-        #             place = geom.structure.Placement(
-        #                 f"fc_place_{i}",
-        #                 volume = vol,
-        #                 pos = pos,
-        #                 rot = rot)
-                    
-        #             # Add placement to LAr volume
-        #             argon_vol.placements.append(place.name)
-
+        # After creating the argon_vol, add field cage components
+        if self.fieldcage_switch:
+            fc_builder = self.get_builder('fieldcage')
+            if fc_builder:
+                # Pass cryostat half-width when placing field shapers
+                fc_builder._place_field_shapers(geom, argon_vol, self.dim[0]/2.0)
 
         # Create overall cryostat volume and add steel shell and argon
         cryo_vol = geom.structure.Volume(self.name + '_volume',

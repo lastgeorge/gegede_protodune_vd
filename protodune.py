@@ -18,14 +18,10 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                  DetEncX=None, DetEncY=None, DetEncZ=None,
                  Cryostat_x=None, Cryostat_y=None, Cryostat_z=None,
                  driftTPCActive=None, widthTPCActive=None, lengthTPCActive=None,
-                 FieldCage_switch="on", Cathode_switch="on", ArapucaMesh_switch="on",
-                 HD_CRT_switch="off", DP_CRT_switch="off",
+                 Cathode_switch=True, ArapucaMesh_switch=True,
+                 HD_CRT_switch=False, DP_CRT_switch=False,
                  wirePitchU=None, wirePitchV=None, wirePitchZ=None,
                  wireAngleU=None, wireAngleV=None,
-                 FieldShaperInnerRadius=None, FieldShaperOuterRadius=None,
-                 FieldShaperTorRad=None, FieldShaperLength=None,
-                 FieldShaperWidth=None, FieldShaperSeparation=None,
-                 NFieldShapers=None,
                  heightCathode=None, CathodeBorder=None,
                  widthCathodeVoid=None, lengthCathodeVoid=None,
                  ArapucaOut_x=None, ArapucaOut_y=None, ArapucaOut_z=None,
@@ -40,26 +36,14 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         self.active_dim = (driftTPCActive, widthTPCActive, lengthTPCActive)
         
         # Feature switches
-        self.field_cage_on = (FieldCage_switch == "on")
-        self.cathode_on = (Cathode_switch == "on")
-        self.arapuca_mesh_on = (ArapucaMesh_switch == "on")
-        self.hd_crt_on = (HD_CRT_switch == "on")
-        self.dp_crt_on = (DP_CRT_switch == "on")
+        self.cathode_on = Cathode_switch
+        self.arapuca_mesh_on = ArapucaMesh_switch
+        self.hd_crt_on = HD_CRT_switch
+        self.dp_crt_on = DP_CRT_switch
         
         # Wire parameters
         self.wire_pitch = (wirePitchU, wirePitchV, wirePitchZ)
         self.wire_angle = (wireAngleU, wireAngleV)
-        
-        # Field cage parameters
-        self.fc_params = dict(
-            inner_radius = FieldShaperInnerRadius,
-            outer_radius = FieldShaperOuterRadius,
-            tor_radius = FieldShaperTorRad,
-            length = FieldShaperLength,
-            width = FieldShaperWidth,
-            separation = FieldShaperSeparation,
-            n_shapers = NFieldShapers
-        )
         
         # Cathode parameters
         self.cathode_params = dict(
@@ -138,8 +122,8 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
     
 
         # Here we would add the construction of:
-        # 1. Cryostat
-         # Get the cryostat volume from the cryostat builder
+        # Cryostat
+        # Get the cryostat volume from the cryostat builder
         cryo_builder = self.get_builder("cryostat")
         cryo_vol = cryo_builder.get_volume()
 
@@ -159,27 +143,7 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         # Add the cryostat placement to the detector enclosure volume
         det_enc_vol.placements.append(cryo_place.name)
 
-       
-
-        # 2. Field Cage if enabled
-
-        # Get field cage builder
-        # fc_builder = self.get_builder('fieldcage')
-        
-        # The cryostat builder will handle placing the field cage
-        # inside its LAr volume since it has fieldcage as subbuilder
-        
-      
-
-
-        # 3. Cathode if enabled  
-        # 4. Wire planes
-        # 5. X-ARAPUCAs
-        # 6. CRTs if enabled
-        # Each would be its own method for clarity
-        
         self.add_volume(det_enc_vol)
-
         # For now just create the basic structure
         # Detailed implementation of each component would follow
         
