@@ -193,8 +193,8 @@ class CathodeBuilder(gegede.builder.Builder):
             material="G10",
             shape=mesh_rod_horizontal)
         
-        # self.add_volume(mesh_rod_v_vol)
-        # self.add_volume(mesh_rod_h_vol)
+        self.add_volume(mesh_rod_v_vol)
+        self.add_volume(mesh_rod_h_vol)
 
         # Then in the main construction code:
         void_index = 0
@@ -288,3 +288,5 @@ class CathodeBuilder(gegede.builder.Builder):
         
         # Add placement to volume
         volume.placements.append(place.name)
+
+    
