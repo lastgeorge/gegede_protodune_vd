@@ -18,14 +18,9 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                  DetEncX=None, DetEncY=None, DetEncZ=None,
                  Cryostat_x=None, Cryostat_y=None, Cryostat_z=None,
                  driftTPCActive=None, widthTPCActive=None, lengthTPCActive=None,
-                 Cathode_switch=True, ArapucaMesh_switch=True,
                  HD_CRT_switch=False, DP_CRT_switch=False,
                  wirePitchU=None, wirePitchV=None, wirePitchZ=None,
                  wireAngleU=None, wireAngleV=None,
-                 heightCathode=None, CathodeBorder=None,
-                 widthCathodeVoid=None, lengthCathodeVoid=None,
-                 ArapucaOut_x=None, ArapucaOut_y=None, ArapucaOut_z=None,
-                 ArapucaIn_x=None, ArapucaIn_y=None, ArapucaIn_z=None,
                  FracMassOfSteel=0.5, FracMassOfAir=0.5,
                  SteelDensity=None, AirDensity=None,
                  **kwds):
@@ -36,8 +31,6 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         self.active_dim = (driftTPCActive, widthTPCActive, lengthTPCActive)
         
         # Feature switches
-        self.cathode_on = Cathode_switch
-        self.arapuca_mesh_on = ArapucaMesh_switch
         self.hd_crt_on = HD_CRT_switch
         self.dp_crt_on = DP_CRT_switch
         
@@ -45,17 +38,6 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         self.wire_pitch = (wirePitchU, wirePitchV, wirePitchZ)
         self.wire_angle = (wireAngleU, wireAngleV)
         
-        # Cathode parameters
-        self.cathode_params = dict(
-            height = heightCathode,
-            border = CathodeBorder,
-            width_void = widthCathodeVoid,
-            length_void = lengthCathodeVoid
-        )
-        
-        # X-ARAPUCA parameters  
-        self.arapuca_out = (ArapucaOut_x, ArapucaOut_y, ArapucaOut_z)
-        self.arapuca_in = (ArapucaIn_x, ArapucaIn_y, ArapucaIn_z)
         
         # Material properties
         self.frac_steel = FracMassOfSteel

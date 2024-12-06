@@ -15,7 +15,14 @@ class CryostatBuilder(gegede.builder.Builder):
                  Cryostat_x=None, Cryostat_y=None, Cryostat_z=None,  # Overall dimensions
                  SteelThickness=None,                                 # Membrane thickness
                  Argon_x=None, Argon_y=None, Argon_z=None,          # Inner argon volume
-                 FieldCage_switch = True, HeightGaseousAr=None,                              # Height of gas argon layer
+                 FieldCage_switch = True, HeightGaseousAr=None,     # Height of gas argon layer
+                 Cathode_switch=True, ArapucaMesh_switch=True,
+                 driftTPCActive=None,
+                 widthTPCActive=None, 
+                 lengthTPCActive=None,
+                 ReadoutPlane=Q('0.06cm'),  # 3 readout planes of 0.02cm each
+                 ArapucaOut_x=None, ArapucaOut_y=None, ArapucaOut_z=None,
+                 ArapucaIn_x=None, ArapucaIn_y=None, ArapucaIn_z=None,
                  BeamPlugRad=None, BeamPlugNiRad=None,             # Beam plug parameters
                  BeamPlugUSAr=None, BeamPlugLe=None,               # More beam plug params
                  **kwds):
@@ -24,6 +31,10 @@ class CryostatBuilder(gegede.builder.Builder):
         self.steel_thickness = SteelThickness
         self.argon_dim = (Argon_x, Argon_y, Argon_z)
         self.gas_argon_height = HeightGaseousAr
+        self.drift_active = driftTPCActive
+        self.readout_plane = ReadoutPlane
+        self.width_active = widthTPCActive
+        self.length_active = lengthTPCActive
         
         # Beam plug parameters
         self.beam_plug = dict(
@@ -34,8 +45,30 @@ class CryostatBuilder(gegede.builder.Builder):
         )
 
         self.fieldcage_switch = FieldCage_switch
+        self.cathode_on = Cathode_switch
+        self.arapuca_mesh_on = ArapucaMesh_switch
+        
+        # Calculate buffer regions following PERL logic:
+        # xLArBuffer = $Argon_x - $driftTPCActive - $HeightGaseousAr - $ReadoutPlane;
+        self.xLArBuffer = self.argon_dim[0] - self.drift_active - \
+                         self.gas_argon_height - self.readout_plane
+        
+        # From PERL:
+        # $Upper_xLArBuffer = 23.6 - $ReadoutPlane;
+        # $Lower_xLArBuffer = 34.7 - $ReadoutPlane;
+        self.upper_xLArBuffer = Q('23.6cm') - self.readout_plane
+        self.lower_xLArBuffer = Q('34.7cm') - self.readout_plane
 
-    
+        # From PERL:
+        # $yLArBuffer = 0.5 * ($Argon_y - $widthTPCActive);
+        # $zLArBuffer = 0.5 * ($Argon_z - $lengthTPCActive);
+        self.y_lar_buffer = 0.5 * (self.argon_dim[1] - self.width_active)
+        self.z_lar_buffer = 0.5 * (self.argon_dim[2] - self.length_active)
+
+        # X-ARAPUCA parameters  
+        self.arapuca_out = (ArapucaOut_x, ArapucaOut_y, ArapucaOut_z)
+        self.arapuca_in = (ArapucaIn_x, ArapucaIn_y, ArapucaIn_z)
+        
 
     def construct(self, geom):
         # Main cryostat shape
@@ -94,6 +127,22 @@ class CryostatBuilder(gegede.builder.Builder):
             if fc_builder:
                 # Pass cryostat half-width when placing field shapers
                 fc_builder._place_field_shapers(geom, argon_vol, self.dim[0]/2.0)
+
+        if self.cathode_on:
+            cathode_builder = self.get_builder('cathode')
+            if cathode_builder:
+                # Create dictionary of placement parameters
+                placement_params = {
+                    'gas_argon_height': self.gas_argon_height,
+                    'upper_xLArBuffer': self.upper_xLArBuffer,
+                    'drift_active': self.drift_active,
+                    'readout_plane': self.readout_plane,
+                    'y_lar_buffer': self.y_lar_buffer,
+                    'z_lar_buffer': self.z_lar_buffer
+                }
+                
+                # Call placement function
+                cathode_builder.place_in_volume(geom, argon_vol, self.argon_dim, placement_params)
 
         # Create overall cryostat volume and add steel shell and argon
         cryo_vol = geom.structure.Volume(self.name + '_volume',
