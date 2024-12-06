@@ -31,6 +31,7 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                  ArapucaOut_x=None, ArapucaOut_y=None, ArapucaOut_z=None,
                  ArapucaIn_x=None, ArapucaIn_y=None, ArapucaIn_z=None,
                  FracMassOfSteel=0.5, FracMassOfAir=0.5,
+                 SteelDensity=None, AirDensity=None,
                  **kwds):
         
         # Store all configuration parameters
@@ -75,45 +76,47 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         # Material properties
         self.frac_steel = FracMassOfSteel
         self.frac_air = FracMassOfAir
+        self.steel_density = SteelDensity
+        self.air_density = AirDensity
 
-# define materials ...
-def construct_materials(self, geom):
-    """Define all materials used in the geometry"""
-    
-    # Calculate mixture density
-    mixture_density = (self.FracMassOfAir * self.AirDensity + 
-                      self.FracMassOfSteel * self.SteelDensity)
-    
-    # Define AirSteelMixture
-    air_steel_mix = geom.matter.Mixture(
-        "AirSteelMixture",
-        density = mixture_density,
-        components = (
-            ("STEEL_STAINLESS_Fe7Cr2Ni", self.FracMassOfSteel),
-            ("Air", self.FracMassOfAir)
+    # define materials ...
+    def construct_materials(self, geom):
+        """Define all materials used in the geometry"""
+        
+        # Calculate mixture density
+        mixture_density = (self.frac_air * self.air_density+ 
+                        self.frac_steel * self.steel_density)
+        
+        # Define AirSteelMixture
+        air_steel_mix = geom.matter.Mixture(
+            "AirSteelMixture",
+            density = mixture_density,
+            components = (
+                ("STEEL_STAINLESS_Fe7Cr2Ni", self.frac_steel),
+                ("Air", self.frac_air)
+            )
         )
-    )
 
-    # Define basic elements
-    fe = geom.matter.Element(
-        "Iron", "Fe", 26, "55.845g/mole")
-    
-    ni = geom.matter.Element(
-        "Nickel", "Ni", 28, "58.6934g/mole")
+        # Define basic elements
+        fe = geom.matter.Element(
+            "Iron", "Fe", 26, "55.845g/mole")
+        
+        ni = geom.matter.Element(
+            "Nickel", "Ni", 28, "58.6934g/mole")
 
-    # Define materials
-    steel = geom.matter.Mixture(
-        "STEEL_STAINLESS_Fe7Cr2Ni",
-        density = "7.9300g/cc",
-        components = (
-            ("Iron", 0.70),
-            ("Nickel", 0.30)
-        ))
-    
-    lar = geom.matter.Molecule(
-        "LAr",
-        density = "1.4g/cc",
-        elements = (("Ar", 1),))
+        # Define materials
+        steel = geom.matter.Mixture(
+            "STEEL_STAINLESS_Fe7Cr2Ni",
+            density = "7.9300g/cc",
+            components = (
+                ("Iron", 0.70),
+                ("Nickel", 0.30)
+            ))
+        
+        lar = geom.matter.Molecule(
+            "LAr",
+            density = "1.4g/cc",
+            elements = (("Ar", 1),))
 
 
 
@@ -159,6 +162,16 @@ def construct_materials(self, geom):
        
 
         # 2. Field Cage if enabled
+
+        # Get field cage builder
+        # fc_builder = self.get_builder('fieldcage')
+        
+        # The cryostat builder will handle placing the field cage
+        # inside its LAr volume since it has fieldcage as subbuilder
+        
+      
+
+
         # 3. Cathode if enabled  
         # 4. Wire planes
         # 5. X-ARAPUCAs

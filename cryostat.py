@@ -84,6 +84,46 @@ class CryostatBuilder(gegede.builder.Builder):
         
         argon_vol.placements.append(gas_place.name)
 
+        # # Get the field cage volume from the builder
+        # if hasattr(self, 'builders'):
+        #     fc_builder = self.get_builder('fieldcage')
+        #     if fc_builder:
+        #         # Get all field cage volumes
+        #         for i in range(fc_builder.n_shapers):
+        #             # Calculate position for each field shaper
+        #             x_pos = (self.dim[0]/2.0 - self.first_to_roof - 
+        #                     i * fc_builder.separation)
+                    
+        #             # Determine if this should be slim or thick
+        #             is_slim = (i < 36) or (i > 77)
+        #             vol = fc_builder.get_volume('slim' if is_slim else 'thick')
+                    
+        #             # Create position and rotation for this field shaper
+        #             pos = geom.structure.Position(
+        #                 f"fc_pos_{i}",
+        #                 x = x_pos,
+        #                 y = Q('0cm'),
+        #                 z = Q('0cm') if not is_slim else 
+        #                     0.5*fc_builder.fc_params['length'] + 
+        #                     fc_builder.fc_params['tor_radius'])
+
+        #             rot = geom.structure.Rotation(
+        #                 f"fc_rot_{i}",
+        #                 x = Q('90deg') if is_slim else Q('0deg'),
+        #                 y = Q('0deg'),
+        #                 z = Q('90deg') if is_slim else Q('0deg'))
+
+        #             # Create placement
+        #             place = geom.structure.Placement(
+        #                 f"fc_place_{i}",
+        #                 volume = vol,
+        #                 pos = pos,
+        #                 rot = rot)
+                    
+        #             # Add placement to LAr volume
+        #             argon_vol.placements.append(place.name)
+
+
         # Create overall cryostat volume and add steel shell and argon
         cryo_vol = geom.structure.Volume(self.name + '_volume',
                                        material='Air',
