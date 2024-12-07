@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 '''
-Field Cage builder for ProtoDUNE-VD geometry
+xarapuca builder for ProtoDUNE-VD geometry
 '''
 
 import gegede.builder
 from gegede import Quantity as Q
 
-class FieldCageBuilder(gegede.builder.Builder):
+class XARAPUCABuilder(gegede.builder.Builder):
     '''
-    Build the field cage for ProtoDUNE-VD.
+    Build the Xarapucas for ProtoDUNE-VD.
     Implements both thick and slim field shapers arranged vertically.
     '''
