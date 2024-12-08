@@ -79,14 +79,6 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                                       material='Air',
                                       shape=main_shape)
 
-        # Construct and place all subbuilders
-        # for builder in self.get_builders():
-        #     if builder.volumes is not None:
-        #         vol = builder.get_volume()
-        #         name = vol.name + '_place'
-        #         pos = geom.structure.Placement(name, volume=vol)
-        #         main_lv.placements.append(pos.name)
-
         # Here we would add the construction of:
         # Cryostat
         # Get the cryostat volume from the cryostat builder

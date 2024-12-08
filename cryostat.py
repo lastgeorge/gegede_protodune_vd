@@ -151,14 +151,5 @@ class CryostatBuilder(gegede.builder.Builder):
         cryo_vol.placements.append(argon_place.name)
         argon_vol.placements.append(gas_ar_place.name)
 
-        # Place all subcomponents inside liquid argon volume
-        # for builder in self.get_builders():
-        #     if builder.volumes:
-        #         vol = builder.get_volume()
-        #         # Skip X-ARAPUCAs as they are handled separately
-        #         if 'xarapuca' not in vol.name.lower():
-        #             name = vol.name + '_place'
-        #             pos = geom.structure.Placement(name, volume=vol)
-        #             argon_vol.placements.append(pos.name)
 
         self.add_volume(cryo_vol)

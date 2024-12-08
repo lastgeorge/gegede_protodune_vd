@@ -274,10 +274,3 @@ class WorldBuilder(gegede.builder.Builder):
         volume.placements.append(pd_place.name)
 
 
-        # Place daughter volumes
-        # for name, builder in self.builders.items():
-        #     if builder.volumes:
-        #         daughter = builder.get_volume()
-        #         pname = f'{daughter.name}_in_{self.name}'
-        #         place = geom.structure.Placement(pname, volume=daughter)
-        #         volume.placements.append(pname)
