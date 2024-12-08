@@ -70,3 +70,17 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
             self.cryo['Cryostat_z'] = self.cryo['Argon_z'] + 2 * self.cryo['SteelThickness']
 
         #print(self.tpc['widthTPCActive'])
+
+
+    def construct(self, geom):
+        '''
+        Construct the geometry.
+        '''
+
+        # Pass calculated dimensions to subbuilders
+        for name, builder in self.builders.items():
+            print(name)
+            # if hasattr(builder, 'set_dimensions'):
+            #     builder.set_dimensions(self.tpc_params, 
+            #                         self.cryo_dims,
+            #                         self.enclosure_dims)
