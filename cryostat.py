@@ -29,13 +29,14 @@ class CryostatBuilder(gegede.builder.Builder):
             self.add_builder(name, builder)
 
     def configure(self, cryostat_parameters=None, tpc_parameters=None, **kwds):
+
         # Store the parameters
         if cryostat_parameters:
             self.cryo = cryostat_parameters
         if tpc_parameters:
             self.tpc = tpc_parameters
         
-        # Pass parameters to subbuilders
+        #Pass parameters to subbuilders
         for name, builder in self.builders.items():
             if name == 'tpcs':
                 builder.configure(tpc_parameters=self.tpc,
