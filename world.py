@@ -6,6 +6,8 @@ World builder for ProtoDUNE-VD
 import gegede.builder
 from gegede import Quantity as Q
 
+from protodune import ProtoDUNEVDBuilder
+
 class WorldBuilder(gegede.builder.Builder):
     '''
     Build the world volume which will contain the full detector
@@ -20,8 +22,8 @@ class WorldBuilder(gegede.builder.Builder):
         self.steel = None
 
         # Add the subbuilders
-        for name, builder in self.builders.items():
-            self.add_builder(name, builder)
+        # for name, builder in self.builders.items():
+        #     self.add_builder(name, builder)
     
 
     def configure(self, material='Air', width=None, height=None, depth=None, 
@@ -29,10 +31,11 @@ class WorldBuilder(gegede.builder.Builder):
                  steel_parameters=None, FoamPadding=None, AirThickness=None,
                  DP_CRT_switch=None, **kwds):
         self.material = material
-        self.width = width
-        self.height = height 
-        self.depth = depth
         
+        # Add guard against double configuration
+        if hasattr(self, '_configured'):
+            return
+
         # Add the parameters that were moved out
         self.FoamPadding = FoamPadding
         self.AirThickness = AirThickness
@@ -91,15 +94,15 @@ class WorldBuilder(gegede.builder.Builder):
             self.steel = eval(steel_parameters, eval_globals)
 
             # Calculate detector enclosure dimensions
-            self.steel['DetEncX'] = (self.cryo['Cryostat_x'] + 
+            self.DetEncX = (self.cryo['Cryostat_x'] + 
                                     2*(self.steel['SteelSupport_x'] + self.FoamPadding) + 
                                     2*self.steel['SpaceSteelSupportToWall'])
             
-            self.steel['DetEncY'] = (self.cryo['Cryostat_y'] + 
+            self.DetEncY = (self.cryo['Cryostat_y'] + 
                                     2*(self.steel['SteelSupport_y'] + self.FoamPadding) + 
                                     self.steel['SpaceSteelSupportToCeiling'])
             
-            self.steel['DetEncZ'] = (self.cryo['Cryostat_z'] + 
+            self.DetEncZ = (self.cryo['Cryostat_z'] + 
                                     2*(self.steel['SteelSupport_z'] + self.FoamPadding) + 
                                     2*self.steel['SpaceSteelSupportToWall'])
 
@@ -139,14 +142,14 @@ class WorldBuilder(gegede.builder.Builder):
                 self.steel['posBotSteelStruct'] += Q('29.7cm')
 
             # Calculate origin positions
-            self.steel['OriginZSet'] = (self.steel['DetEncZ']/2.0 -
+            self.OriginZSet = (self.DetEncZ/2.0 -
                                     self.steel['SpaceSteelSupportToWall'] -
                                     self.steel['SteelSupport_z'] -
                                     self.FoamPadding -
                                     self.cryo['SteelThickness'] -
                                     self.cryo['zLArBuffer'])
 
-            self.steel['OriginYSet'] = (self.steel['DetEncY']/2.0 -
+            self.OriginYSet = (self.DetEncY/2.0 -
                                     self.steel['SpaceSteelSupportToCeiling']/2.0 -
                                     self.steel['SteelSupport_y'] -
                                     self.FoamPadding -
@@ -154,7 +157,7 @@ class WorldBuilder(gegede.builder.Builder):
                                     self.cryo['yLArBuffer'] -
                                     self.tpc['widthTPCActive']/2)
 
-            self.steel['OriginXSet'] = (self.steel['DetEncX']/2.0 -
+            self.OriginXSet = (self.DetEncX/2.0 -
                                     self.steel['SpaceSteelSupportToWall'] -
                                     self.steel['SteelSupport_x'] -
                                     self.FoamPadding -
@@ -163,19 +166,86 @@ class WorldBuilder(gegede.builder.Builder):
                                     Q('6.0cm')/2 +  # heightCathode/2
                                     self.cryo['Upper_xLArBuffer'])
 
+        # Mark as configured
+        self._configured = True
+
         # Pass parameters to sub builders
         for name, builder in self.builders.items():
             if name == 'detenclosure':
                 builder.configure(cryostat_parameters=self.cryo,
                                   tpc_parameters=self.tpc,
                                   steel_parameters=self.steel,
+                                  DetEncX=self.DetEncX,
+                                  DetEncY=self.DetEncY,
+                                  DetEncZ=self.DetEncZ,
                                 **kwds)
 
+    # define materials ...
+    def construct_materials(self, geom):
+        """Define all materials used in the geometry"""
+    
+        # Define elements first
+        ni = geom.matter.Element("Nickel", "Ni", 28, "58.6934g/mole")
+        cr = geom.matter.Element("Chromium", "Cr", 24, "51.9961g/mole")
+        fe = geom.matter.Element("Iron", "Fe", 26, "55.845g/mole")
+        al = geom.matter.Element("Aluminum", "Al", 13, "26.9815g/mole")
+        n = geom.matter.Element("Nitrogen", "N", 7, "14.0067g/mole")
+        o = geom.matter.Element("Oxygen", "O", 8, "15.999g/mole")
+        ar = geom.matter.Element("Argon", "Ar", 18, "39.948g/mole")
+        c = geom.matter.Element("Carbon", "C", 6, "12.0107g/mole")
+        h = geom.matter.Element("Hydrogen", "H", 1, "1.00794g/mole")
+        
+        # Define air
+        air = geom.matter.Mixture("Air", density = "0.001225g/cc",
+                                components = (("Nitrogen", 0.781),
+                                            ("Oxygen", 0.209),
+                                            ("Argon", 0.010)))
+
+        # Define stainless steel
+        steel = geom.matter.Mixture("STEEL_STAINLESS_Fe7Cr2Ni", 
+                                density = "7.9300g/cc",
+                                components = (("Iron", 0.70),
+                                            ("Chromium", 0.20),
+                                            ("Nickel", 0.10)))
+
+        # Define air-steel mixture for support structure
+        mixture_density = Q("0.001225g/cc") * self.steel["FracMassOfAir"] + \
+                        Q("7.9300g/cc") * self.steel["FracMassOfSteel"]
+                        
+        air_steel_mix = geom.matter.Mixture("AirSteelMixture",
+                                        density = mixture_density,
+                                        components = (
+                                            ("STEEL_STAINLESS_Fe7Cr2Ni", self.steel["FracMassOfSteel"]),
+                                            ("Air", self.steel["FracMassOfAir"])))
+
+        # Define liquid argon
+        lar = geom.matter.Molecule("LAr", density = "1.390g/cc",
+                                elements = (("Argon", 1),))
+
+        # Define gaseous argon
+        gar = geom.matter.Molecule("GAr", density = "0.001784g/cc",
+                                elements = (("Argon", 1),))
+
+        # Define G10/FR4
+        # Formula from http://pdg.lbl.gov/2014/AtomicNuclearProperties/
+        g10 = geom.matter.Mixture("G10", density = "1.7g/cc",
+                                components = (
+                                    ("Silicon", 0.291),
+                                    ("Carbon", 0.278),
+                                    ("Oxygen", 0.248),
+                                    ("Hydrogen", 0.094),
+                                    ("Iron", 0.089)))
+
     def construct(self, geom):
+        # Define materials first
+        self.construct_materials(geom)
+
+        # print("A", self.DetEncX, self.DetEncY, self.DetEncZ)    
+
         shape = geom.shapes.Box(self.name + '_shape', 
-                              dx=self.width/2.0,
-                              dy=self.height/2.0,
-                              dz=self.depth/2.0)
+                              dx=self.DetEncX + 2*self.AirThickness,
+                              dy=self.DetEncY + 2*self.AirThickness,
+                              dz=self.DetEncZ + 2*self.AirThickness)
         
         volume = geom.structure.Volume(self.name + '_volume',
                                      material=self.material,
@@ -183,10 +253,31 @@ class WorldBuilder(gegede.builder.Builder):
         
         self.add_volume(volume)
 
+        
+        pd_builder = self.get_builder("detenclosure")
+        pd_vol = pd_builder.get_volume()
+
+        # Create a placement for the cryostat in the detector enclosure
+        # Place it at the center (0,0,0) since the PERL script shows posCryoInDetEnc=(0,0,0)
+        pd_pos = geom.structure.Position(
+            "pd_pos",
+            x=self.OriginXSet, 
+            y=self.OriginYSet,
+            z=self.OriginZSet)
+        
+        pd_place = geom.structure.Placement(
+            "pd_place",
+            volume=pd_vol,
+            pos=pd_pos)
+
+        # Add the cryostat placement to the detector enclosure volume
+        volume.placements.append(pd_place.name)
+
+
         # Place daughter volumes
-        for name, builder in self.builders.items():
-            if builder.volumes:
-                daughter = builder.get_volume()
-                pname = f'{daughter.name}_in_{self.name}'
-                place = geom.structure.Placement(pname, volume=daughter)
-                volume.placements.append(pname)
+        # for name, builder in self.builders.items():
+        #     if builder.volumes:
+        #         daughter = builder.get_volume()
+        #         pname = f'{daughter.name}_in_{self.name}'
+        #         place = geom.structure.Placement(pname, volume=daughter)
+        #         volume.placements.append(pname)

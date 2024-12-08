@@ -25,19 +25,37 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         self.tpc = None
         self.steel = None
 
-        # Add the subbuilders
-        for name, builder in self.builders.items():
-            self.add_builder(name, builder)
+        self.DetEncX = None
+        self.DetEncY = None
+        self.DetEncZ = None
 
-    def configure(self, cryostat_parameters=None, tpc_parameters=None, steel_parameters = None, **kwds):
+        # Add the subbuilders
+        # for name, builder in self.builders.items():
+        #     self.add_builder(name, builder)
+
+    def configure(self, cryostat_parameters=None, tpc_parameters=None, 
+                 steel_parameters=None, DetEncX=None, DetEncY=None, 
+                 DetEncZ=None, **kwds):
         
+        # Add guard against double configuration
+        if hasattr(self, '_configured'):
+            return
+
         # Store the parameters
+        self.DetEncX = DetEncX
+        self.DetEncY = DetEncY 
+        self.DetEncZ = DetEncZ
+        
         if cryostat_parameters:
             self.cryo = cryostat_parameters
         if tpc_parameters:
             self.tpc = tpc_parameters
         if steel_parameters:
             self.steel = steel_parameters
+
+        
+        # Mark as configured
+        self._configured = True
 
         # Pass parameters to sub builders
         for name, builder in self.builders.items():
@@ -49,14 +67,13 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
     def construct(self, geom):
         '''
         Construct the geometry.
-        '''
-        
+        '''     
 
         # Create the main volume
         main_shape = geom.shapes.Box(self.name + '_shape',
-                                   dx=Q('1500cm'),
-                                   dy=Q('1500cm'),
-                                   dz=Q('1500cm'))
+                                   dx=self.DetEncX,
+                                   dy=self.DetEncY,
+                                   dz=self.DetEncZ)
         
         main_lv = geom.structure.Volume(self.name, 
                                       material='Air',
