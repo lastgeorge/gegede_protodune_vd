@@ -69,18 +69,35 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
             self.cryo['Cryostat_y'] = self.cryo['Argon_y'] + 2 * self.cryo['SteelThickness']
             self.cryo['Cryostat_z'] = self.cryo['Argon_z'] + 2 * self.cryo['SteelThickness']
 
-        #print(self.tpc['widthTPCActive'])
-
+        # Pass parameters to sub builders ... 
+        for name, builder in self.builders.items():
+            if name == 'cryostat':
+                builder.configure(tpc_parameters=self.tpc, 
+                                cryostat_parameters=self.cryo,
+                                **kwds)
 
     def construct(self, geom):
         '''
         Construct the geometry.
         '''
+        
 
-        # Pass calculated dimensions to subbuilders
-        for name, builder in self.builders.items():
-            print(name)
-            # if hasattr(builder, 'set_dimensions'):
-            #     builder.set_dimensions(self.tpc_params, 
-            #                         self.cryo_dims,
-            #                         self.enclosure_dims)
+        # Create the main volume
+        main_shape = geom.shapes.Box(self.name + '_shape',
+                                   dx=Q('1500cm'),
+                                   dy=Q('1500cm'),
+                                   dz=Q('1500cm'))
+        
+        main_lv = geom.structure.Volume(self.name, 
+                                      material='Air',
+                                      shape=main_shape)
+
+        # Construct and place all subbuilders
+        # for builder in self.get_builders():
+        #     if builder.volumes is not None:
+        #         vol = builder.get_volume()
+        #         name = vol.name + '_place'
+        #         pos = geom.structure.Placement(name, volume=vol)
+        #         main_lv.placements.append(pos.name)
+
+        self.add_volume(main_lv)
