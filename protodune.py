@@ -23,18 +23,21 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         # Initialize parameters as None
         self.cryo = None 
         self.tpc = None
+        self.steel = None
 
         # Add the subbuilders
         for name, builder in self.builders.items():
             self.add_builder(name, builder)
 
-    def configure(self, cryostat_parameters=None, tpc_parameters=None, **kwds):
+    def configure(self, cryostat_parameters=None, tpc_parameters=None, steel_parameters = None, **kwds):
         
         # Store the parameters
         if cryostat_parameters:
             self.cryo = cryostat_parameters
         if tpc_parameters:
             self.tpc = tpc_parameters
+        if steel_parameters:
+            self.steel = steel_parameters
 
         # Pass parameters to sub builders
         for name, builder in self.builders.items():
