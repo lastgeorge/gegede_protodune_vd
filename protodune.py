@@ -87,4 +87,28 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         #         pos = geom.structure.Placement(name, volume=vol)
         #         main_lv.placements.append(pos.name)
 
+        # Here we would add the construction of:
+        # Cryostat
+        # Get the cryostat volume from the cryostat builder
+        cryo_builder = self.get_builder("cryostat")
+        cryo_vol = cryo_builder.get_volume()
+
+        # Create a placement for the cryostat in the detector enclosure
+        # Place it at the center (0,0,0) since the PERL script shows posCryoInDetEnc=(0,0,0)
+        cryo_pos = geom.structure.Position(
+            "cryo_pos",
+            x=Q('0cm'), 
+            y=Q('0cm'),
+            z=Q('0cm'))
+        
+        cryo_place = geom.structure.Placement(
+            "cryo_place",
+            volume=cryo_vol,
+            pos=cryo_pos)
+
+        # Add the cryostat placement to the detector enclosure volume
+        main_lv.placements.append(cryo_place.name)
+
         self.add_volume(main_lv)
+
+
