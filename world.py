@@ -28,8 +28,8 @@ class WorldBuilder(gegede.builder.Builder):
 
     def configure(self, material='Air', width=None, height=None, depth=None, 
                  tpc_parameters=None, cryostat_parameters=None, 
-                 steel_parameters=None, FoamPadding=None, AirThickness=None,
-                 DP_CRT_switch=None, **kwds):
+                 steel_parameters=None, beam_parameters=None, FoamPadding=None, 
+                 AirThickness=None, DP_CRT_switch=None, **kwds):
         self.material = material
         
         # Add guard against double configuration
@@ -166,6 +166,11 @@ class WorldBuilder(gegede.builder.Builder):
                                     Q('6.0cm')/2 +  # heightCathode/2
                                     self.cryo['Upper_xLArBuffer'])
 
+        # Process beam parameters
+        if beam_parameters:
+            eval_globals = {'Q': Q}
+            self.beam = eval(beam_parameters, eval_globals)
+
         # Mark as configured
         self._configured = True
 
@@ -175,9 +180,11 @@ class WorldBuilder(gegede.builder.Builder):
                 builder.configure(cryostat_parameters=self.cryo,
                                   tpc_parameters=self.tpc,
                                   steel_parameters=self.steel,
+                                  beam_parameters=self.beam,
                                   DetEncX=self.DetEncX,
                                   DetEncY=self.DetEncY,
                                   DetEncZ=self.DetEncZ,
+                                  FoamPadding=self.FoamPadding,
                                 **kwds)
 
     # define materials ...

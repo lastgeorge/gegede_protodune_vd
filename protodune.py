@@ -34,8 +34,8 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         #     self.add_builder(name, builder)
 
     def configure(self, cryostat_parameters=None, tpc_parameters=None, 
-                 steel_parameters=None, DetEncX=None, DetEncY=None, 
-                 DetEncZ=None, **kwds):
+                 steel_parameters=None, beam_parameters=None, DetEncX=None, 
+                 DetEncY=None, DetEncZ=None, FoamPadding=None, **kwds):
         
         # Add guard against double configuration
         if hasattr(self, '_configured'):
@@ -45,6 +45,7 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         self.DetEncX = DetEncX
         self.DetEncY = DetEncY 
         self.DetEncZ = DetEncZ
+        self.FoamPadding = FoamPadding
         
         if cryostat_parameters:
             self.cryo = cryostat_parameters
@@ -59,6 +60,12 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
 
         # Pass parameters to sub builders
         for name, builder in self.builders.items():
+            if name == 'beamelements':
+                builder.configure(steel_parameters=self.steel,
+                                cryostat_parameters=self.cryo,
+                                beam_parameters=beam_parameters,
+                                FoamPadding=self.FoamPadding,
+                                **kwds)
             if name == 'cryostat':
                 builder.configure(cryostat_parameters=self.cryo,
                                   tpc_parameters=self.tpc, 
