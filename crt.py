@@ -16,20 +16,38 @@ class CRTBuilder(gegede.builder.Builder):
         super(CRTBuilder, self).__init__(name)
         self.crt = None
         self.steel = None
+        self.OriginXSet = None
+        self.OriginYSet = None
+        self.OriginZSet = None
 
-    def configure(self, crt_parameters=None, steel_parameters=None, **kwargs):
-        """Configure CRT parameters"""
+    def configure(self, crt_parameters=None, steel_parameters=None, 
+                 OriginXSet=None, OriginYSet=None, OriginZSet=None, **kwargs):
+        """Configure the CRT geometry.
         
+        Args:
+            crt_parameters (dict): CRT parameters from config
+            steel_parameters (dict): Steel support parameters
+            OriginXSet (Quantity): X origin coordinate 
+            OriginYSet (Quantity): Y origin coordinate
+            OriginZSet (Quantity): Z origin coordinate
+            **kwargs: Additional configuration parameters
+        """
+        # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
 
-        self.crt = crt_parameters
-        self.steel = steel_parameters
+        # Store parameters
+        if crt_parameters:
+            self.crt = crt_parameters
+        if steel_parameters:
+            self.steel = steel_parameters
 
-        if self.crt and self.steel:
-            # Calculate positions of DS and US CRT modules
-            self.calculate_positions()
+        # Store origin coordinates
+        self.OriginXSet = OriginXSet
+        self.OriginYSet = OriginYSet 
+        self.OriginZSet = OriginZSet
 
+        # Mark as configured
         self._configured = True
 
     def calculate_positions(self):
@@ -117,6 +135,11 @@ class CRTBuilder(gegede.builder.Builder):
             add_US_position(idx, x, y, z, rot)
 
         # Calculate Beam Spot position
-        self.BeamSpot_x = self.steel['posCryoInDetEnc']['x'] + self.crt['CRTSurveyOrigin_x'] + self.crt['BeamSpotDSS_x'] + self.crt['OriginXSet']
-        self.BeamSpot_y = self.steel['posCryoInDetEnc']['y'] + self.crt['CRTSurveyOrigin_y'] + self.crt['BeamSpotDSS_y'] + self.crt['OriginYSet']
-        self.BeamSpot_z = self.steel['posCryoInDetEnc']['z'] + self.crt['CRTSurveyOrigin_z'] + self.crt['BeamSpotDSS_z'] + self.crt['OriginZSet']
+        self.BeamSpot_x = self.steel['posCryoInDetEnc']['x'] + self.crt['CRTSurveyOrigin_x'] + self.crt['BeamSpotDSS_x'] + self.OriginXSet
+        self.BeamSpot_y = self.steel['posCryoInDetEnc']['y'] + self.crt['CRTSurveyOrigin_y'] + self.crt['BeamSpotDSS_y'] + self.OriginYSet
+        self.BeamSpot_z = self.steel['posCryoInDetEnc']['z'] + self.crt['CRTSurveyOrigin_z'] + self.crt['BeamSpotDSS_z'] + self.OriginZSet
+
+    def construct(self, geom):
+        '''Construct the CRT geometry'''
+        # TODO: Add CRT construction code
+        pass

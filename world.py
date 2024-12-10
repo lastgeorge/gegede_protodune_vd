@@ -20,6 +20,9 @@ class WorldBuilder(gegede.builder.Builder):
         self.cryo = None 
         self.tpc = None
         self.steel = None
+        self.beam = None
+        self.crt = None
+        self.cathode = None  # Add this line
 
         # Add the subbuilders
         # for name, builder in self.builders.items():
@@ -29,6 +32,7 @@ class WorldBuilder(gegede.builder.Builder):
     def configure(self, material='Air', width=None, height=None, depth=None, 
                  tpc_parameters=None, cryostat_parameters=None, 
                  steel_parameters=None, beam_parameters=None, crt_parameters=None,
+                 cathode_parameters=None, xarapuca_parameters=None,  # Add this line
                  FoamPadding=None, AirThickness=None, DP_CRT_switch=None, **kwds):
         self.material = material
         
@@ -176,6 +180,14 @@ class WorldBuilder(gegede.builder.Builder):
             eval_globals = {'Q': Q}
             self.crt = eval(crt_parameters, eval_globals)
 
+        if cathode_parameters:
+            eval_globals = {'Q': Q}
+            self.cathode = eval(cathode_parameters, eval_globals)
+
+        if xarapuca_parameters:  # Add this block
+            eval_globals = {'Q': Q}
+            self.xarapuca = eval(xarapuca_parameters, eval_globals)
+
         # Mark as configured
         self._configured = True
 
@@ -187,10 +199,15 @@ class WorldBuilder(gegede.builder.Builder):
                                   steel_parameters=self.steel,
                                   beam_parameters=self.beam,
                                   crt_parameters=self.crt,
+                                  cathode_parameters=self.cathode,
+                                  xarapuca_parameters=self.xarapuca,  # Add this line
                                   DetEncX=self.DetEncX,
                                   DetEncY=self.DetEncY,
                                   DetEncZ=self.DetEncZ,
                                   FoamPadding=self.FoamPadding,
+                                  OriginXSet=self.OriginXSet,
+                                  OriginYSet=self.OriginYSet,
+                                  OriginZSet=self.OriginZSet,
                                 **kwds)
 
     # define materials ...

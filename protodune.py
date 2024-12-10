@@ -24,10 +24,15 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         self.cryo = None 
         self.tpc = None
         self.steel = None
+        self.cathode = None
 
         self.DetEncX = None
         self.DetEncY = None
         self.DetEncZ = None
+
+        self.OriginXSet = None
+        self.OriginYSet = None 
+        self.OriginZSet = None
 
         # Add the subbuilders
         # for name, builder in self.builders.items():
@@ -35,7 +40,10 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
 
     def configure(self, cryostat_parameters=None, tpc_parameters=None, 
                  steel_parameters=None, beam_parameters=None, crt_parameters=None,
-                 DetEncX=None, DetEncY=None, DetEncZ=None, FoamPadding=None, **kwds):
+                 cathode_parameters=None, xarapuca_parameters=None,  # Add this line
+                 DetEncX=None, DetEncY=None, DetEncZ=None, FoamPadding=None, 
+                 OriginXSet=None, OriginYSet=None, OriginZSet=None,  # Add these
+                 **kwds):
         
         # Add guard against double configuration
         if hasattr(self, '_configured'):
@@ -46,6 +54,11 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         self.DetEncY = DetEncY 
         self.DetEncZ = DetEncZ
         self.FoamPadding = FoamPadding
+
+        # Store Origin coordinates
+        self.OriginXSet = OriginXSet
+        self.OriginYSet = OriginYSet
+        self.OriginZSet = OriginZSet
         
         if cryostat_parameters:
             self.cryo = cryostat_parameters
@@ -53,6 +66,10 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
             self.tpc = tpc_parameters
         if steel_parameters:
             self.steel = steel_parameters
+        if cathode_parameters:
+            self.cathode = cathode_parameters
+        if xarapuca_parameters:  # Add this block
+            self.xarapuca = xarapuca_parameters
 
         
         # Mark as configured
@@ -69,9 +86,15 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
             if name == 'cryostat':
                 builder.configure(cryostat_parameters=self.cryo,
                                   tpc_parameters=self.tpc,
+                                  cathode_parameters=self.cathode,
+                                  xarapuca_parameters=self.xarapuca,  # Add this line
                                 **kwds)
             if name == 'crt':
                 builder.configure(crt_parameters=crt_parameters,
+                                steel_parameters=self.steel,
+                                OriginXSet=self.OriginXSet,  # Add these three lines
+                                OriginYSet=self.OriginYSet,
+                                OriginZSet=self.OriginZSet,
                                 **kwds)
 
     def construct(self, geom):

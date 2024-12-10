@@ -9,37 +9,25 @@ from gegede import Quantity as Q
 class CathodeBuilder(gegede.builder.Builder):
     '''Build the cathode structure including mesh'''
 
-    # Define default parameters that can be overridden in configuration
-    defaults = dict(
-        # Basic cathode frame parameters
-        heightCathode = Q("6.0cm"),
-        CathodeBorder = Q("4.0cm"),
-        widthCathodeVoid = Q("77.25cm"),  
-        lengthCathodeVoid = Q("67.25cm"),
+    def __init__(self, name):
+        super(CathodeBuilder, self).__init__(name)
+        self.params = None
 
-        # Cathode mesh parameters  
-        CathodeMeshInnerStructureWidth = Q("0.25cm"),
-        CathodeMeshInnerStructureThickness = Q("0.05cm"),
-        CathodeMeshInnerStructureSeparation = Q("2.5cm"),
-        CathodeMeshInnerStructureNumberOfStrips_vertical = 30,
-        CathodeMeshInnerStructureNumberOfStrips_horizontal = 26,
-        
-        # Cathode frame offset
-        CathodeMeshOffset_Y = Q("87.625cm")
-    )
-
-    def configure(self, tpc_params=None, **kwargs):
+    def configure(self, cathode_parameters=None, tpc_params=None, **kwargs):
         """Configure the cathode geometry.
         
         Args:
+            cathode_parameters (dict): Cathode parameters from config
             tpc_params (dict): TPC parameters from parent builder
             **kwargs: Additional configuration parameters
         """
-        # Start with defaults
-        self.params = self.defaults.copy()
-        
-        # Update with any overrides from kwargs
-        self.params.update(kwargs)
+        # Add guard against double configuration
+        if hasattr(self, '_configured'):
+            return
+            
+        # Store cathode params
+        if cathode_parameters:
+            self.params = cathode_parameters
         
         # Store TPC params we need
         if tpc_params:
@@ -52,3 +40,15 @@ class CathodeBuilder(gegede.builder.Builder):
                 self.params['lengthCathodeVoid']
             self.params['CathodeMeshInnerStructureLength_horizontal'] = \
                 self.params['widthCathodeVoid']
+
+        # Update with any overrides from kwargs
+        if kwargs:
+            self.params.update(kwargs)
+            
+        # Mark as configured
+        self._configured = True
+
+    def construct(self, geom):
+        '''Construct the cathode geometry'''
+        # TODO: Add cathode construction code
+        pass
