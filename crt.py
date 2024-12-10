@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+'''
+CRT (Cosmic Ray Tagger) builder for ProtoDUNE-VD geometry
+'''
+
+import gegede.builder
+from gegede import Quantity as Q
+
+class CRTBuilder(gegede.builder.Builder):
+    '''
+    Build the Cosmic Ray Tagger (CRT) for ProtoDUNE-VD.
+    Implements both HD-CRT and DP-CRT modules.
+    '''
+
+    def __init__(self, name):
+        super(CRTBuilder, self).__init__(name)
+        self.crt = None
+        self.steel = None
+
+    def configure(self, crt_parameters=None, steel_parameters=None, **kwargs):
+        """Configure CRT parameters"""
+        
+        if hasattr(self, '_configured'):
+            return
+
+        self.crt = crt_parameters
+        self.steel = steel_parameters
+
+        if self.crt and self.steel:
+            # Calculate positions of DS and US CRT modules
+            self.calculate_positions()
+
+        self._configured = True
+
+    def calculate_positions(self):
+        '''Calculate all the CRT module positions'''
+        
+        self.posCRTDS_x = []
+        self.posCRTDS_y = []
+        self.posCRTDS_z = [] 
+        self.posCRTDS_rot = []
+        
+        self.posCRTUS_x = []
+        self.posCRTUS_y = []
+        self.posCRTUS_z = []
+        self.posCRTUS_rot = []
+
+        # Helper function to calculate positions
+        def add_DS_position(index, x, y, z, rot):
+            self.posCRTDS_x.append(x)
+            self.posCRTDS_y.append(y)
+            self.posCRTDS_z.append(z)
+            self.posCRTDS_rot.append(rot)
+
+        def add_US_position(index, x, y, z, rot):
+            self.posCRTUS_x.append(x)
+            self.posCRTUS_y.append(y)
+            self.posCRTUS_z.append(z)
+            self.posCRTUS_rot.append(rot)
+
+        # Define CRT module configurations
+        ds_configs = [
+            # Top Left
+            ('DSTopLeft', 'DSTopLeftBa', [-1, -1, 1], "rPlus90AboutX", 0),
+            ('DSTopLeft', 'DSTopLeftBa', [1, -1, 1], "rPlus90AboutX", 1),
+            ('DSTopLeft', 'DSTopLeftFr', [-1, -1, 1], "rMinus90AboutYMinus90AboutX", 2),
+            ('DSTopLeft', 'DSTopLeftFr', [-1, 1, 1], "rMinus90AboutYMinus90AboutX", 3),
+            # Bottom Left
+            ('DSBotLeft', 'DSBotLeftFr', [-1, 1, 1], "rPlus90AboutX", 4),
+            ('DSBotLeft', 'DSBotLeftFr', [1, 1, 1], "rPlus90AboutX", 5),
+            ('DSBotLeft', 'DSBotLeftBa', [-1, -1, 1], "rMinus90AboutYMinus90AboutX", 6),
+            ('DSBotLeft', 'DSBotLeftBa', [-1, 1, 1], "rMinus90AboutYMinus90AboutX", 7),
+            # Top Right
+            ('DSTopRight', 'DSTopRightFr', [-1, -1, 1], "rPlus90AboutX", 8),
+            ('DSTopRight', 'DSTopRightFr', [1, -1, 1], "rPlus90AboutX", 9),
+            ('DSTopRight', 'DSTopRightBa', [1, -1, 1], "rMinus90AboutYMinus90AboutX", 10),
+            ('DSTopRight', 'DSTopRightBa', [1, 1, 1], "rMinus90AboutYMinus90AboutX", 11),
+            # Bottom Right
+            ('DSBotRight', 'DSBotRightBa', [-1, 1, 1], "rPlus90AboutX", 12),
+            ('DSBotRight', 'DSBotRightBa', [1, 1, 1], "rPlus90AboutX", 13),
+            ('DSBotRight', 'DSBotRightFr', [1, -1, 1], "rMinus90AboutYMinus90AboutX", 14),
+            ('DSBotRight', 'DSBotRightFr', [1, 1, 1], "rMinus90AboutYMinus90AboutX", 15),
+        ]
+
+        us_configs = [
+            # Using similar pattern for upstream modules...
+            ('USTopLeft', 'USTopLeftBa', [1, -1, 1], "rPlus90AboutX", 1),
+            ('USTopLeft', 'USTopLeftFr', [-1, -1, 1], "rMinus90AboutYMinus90AboutX", 2),
+            ('USTopLeft', 'USTopLeftFr', [-1, 1, 1], "rMinus90AboutYMinus90AboutX", 3),
+            # Continue for other US positions...
+        ]
+
+        # Process downstream modules
+        for base, z_pos, mods, rot, idx in ds_configs:
+            x = (self.steel['posCryoInDetEnc']['x'] + self.crt['CRTSurveyOrigin_x'] + 
+                 self.crt[f'CRT_{base}_x'] + 
+                 mods[0] * (self.crt['ModuleLongCorr'] if abs(mods[0]) == 1 else self.crt['ModuleSMDist']))
+            y = (self.steel['posCryoInDetEnc']['y'] + self.crt['CRTSurveyOrigin_y'] + 
+                 self.crt[f'CRT_{base}_y'] + 
+                 mods[1] * (self.crt['ModuleLongCorr'] if abs(mods[1]) == 1 else self.crt['ModuleSMDist']))
+            z = (self.crt['CRTSurveyOrigin_z'] + 
+                 self.crt[f'CRT_{z_pos}_z'] + 
+                 mods[2] * self.crt['ModuleOff_z'])
+            add_DS_position(idx, x, y, z, rot)
+
+        # Process upstream modules
+        for base, z_pos, mods, rot, idx in us_configs:
+            x = (self.steel['posCryoInDetEnc']['x'] + self.crt['CRTSurveyOrigin_x'] + 
+                 self.crt[f'CRT_{base}_x'] + 
+                 mods[0] * (self.crt['ModuleLongCorr'] if abs(mods[0]) == 1 else self.crt['ModuleSMDist']))
+            y = (self.steel['posCryoInDetEnc']['y'] + self.crt['CRTSurveyOrigin_y'] + 
+                 self.crt[f'CRT_{base}_y'] + 
+                 mods[1] * (self.crt['ModuleLongCorr'] if abs(mods[1]) == 1 else self.crt['ModuleSMDist']))
+            z = (self.crt['CRTSurveyOrigin_z'] + 
+                 self.crt[f'CRT_{z_pos}_z'] + 
+                 mods[2] * self.crt['ModuleOff_z'])
+            add_US_position(idx, x, y, z, rot)
+
+        # Calculate Beam Spot position
+        self.BeamSpot_x = self.steel['posCryoInDetEnc']['x'] + self.crt['CRTSurveyOrigin_x'] + self.crt['BeamSpotDSS_x'] + self.crt['OriginXSet']
+        self.BeamSpot_y = self.steel['posCryoInDetEnc']['y'] + self.crt['CRTSurveyOrigin_y'] + self.crt['BeamSpotDSS_y'] + self.crt['OriginYSet']
+        self.BeamSpot_z = self.steel['posCryoInDetEnc']['z'] + self.crt['CRTSurveyOrigin_z'] + self.crt['BeamSpotDSS_z'] + self.crt['OriginZSet']
