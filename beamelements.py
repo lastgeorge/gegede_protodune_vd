@@ -45,6 +45,10 @@ class BeamElementsBuilder(gegede.builder.Builder):
                  beam_parameters=None, FoamPadding=None, **kwargs):
         """Configure beam parameters"""
         
+        print('Configure BeamElements')
+        if hasattr(self, '_configured'):
+            return
+
         self.beam = beam_parameters
         self.steel = steel_parameters
         self.cryo = cryostat_parameters
@@ -177,3 +181,5 @@ class BeamElementsBuilder(gegede.builder.Builder):
                                         self.beam['BeamPlugMembPosDZ']*self.beam['DeltaYZ3'])
             self.beam['BeamPlugMemb_z'] = (self.beam['BeamWStPlateFF_z'] + 
                                         self.beam['BeamPlugMembPosDZ'])
+            
+            self._configured = True

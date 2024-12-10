@@ -23,6 +23,8 @@ class WorldBuilder(gegede.builder.Builder):
         self.beam = None
         self.crt = None
         self.cathode = None  # Add this line
+        self.fieldcage = None  # Add this line
+        self.pmt = None  # Add this line
 
         # Add the subbuilders
         # for name, builder in self.builders.items():
@@ -33,9 +35,12 @@ class WorldBuilder(gegede.builder.Builder):
                  tpc_parameters=None, cryostat_parameters=None, 
                  steel_parameters=None, beam_parameters=None, crt_parameters=None,
                  cathode_parameters=None, xarapuca_parameters=None,  # Add this line
+                 fieldcage_parameters=None,  # Add this line
+                 pmt_parameters=None,  # Add this line
                  FoamPadding=None, AirThickness=None, DP_CRT_switch=None, **kwds):
         self.material = material
         
+        print('Configure World')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
@@ -188,6 +193,14 @@ class WorldBuilder(gegede.builder.Builder):
             eval_globals = {'Q': Q}
             self.xarapuca = eval(xarapuca_parameters, eval_globals)
 
+        if fieldcage_parameters:  # Add this block
+            eval_globals = {'Q': Q}
+            self.fieldcage = eval(fieldcage_parameters, eval_globals)
+
+        if pmt_parameters:  # Add this block
+            eval_globals = {'Q': Q}
+            self.pmt = eval(pmt_parameters, eval_globals)
+
         # Mark as configured
         self._configured = True
 
@@ -201,6 +214,8 @@ class WorldBuilder(gegede.builder.Builder):
                                   crt_parameters=self.crt,
                                   cathode_parameters=self.cathode,
                                   xarapuca_parameters=self.xarapuca,  # Add this line
+                                  fieldcage_parameters=self.fieldcage,  # Add this line
+                                  pmt_parameters=self.pmt,  # Add this line
                                   DetEncX=self.DetEncX,
                                   DetEncY=self.DetEncY,
                                   DetEncZ=self.DetEncZ,

@@ -24,6 +24,7 @@ class XARAPUCABuilder(gegede.builder.Builder):
             cathode_parameters: Dictionary containing cathode parameters
             **kwargs: Additional configuration parameters
         """
+        print('Configure XARAPUCA')
         if hasattr(self, '_configured'):
             return
         

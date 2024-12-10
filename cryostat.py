@@ -24,14 +24,18 @@ class CryostatBuilder(gegede.builder.Builder):
         self.cryo = None 
         self.tpc = None
         self.cathode = None
+        self.xarapuca = None
+        self.fieldcage = None
+        self.pmt = None
 
         # # Add the subbuilders
         # for name, builder in self.builders.items():
         #     self.add_builder(name, builder)
 
     def configure(self, cryostat_parameters=None, tpc_parameters=None, 
-                 cathode_parameters=None, xarapuca_parameters=None, **kwds):  # Add xarapuca_parameters
+                 cathode_parameters=None, xarapuca_parameters=None, fieldcage_parameters=None, pmt_parameters=None, **kwds):  # Add pmt_parameters
 
+        print('Configure Cryostat')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
@@ -60,6 +64,12 @@ class CryostatBuilder(gegede.builder.Builder):
                                 **kwds)
             elif name == 'xarapuca':
                 builder.configure(xarapuca_parameters=self.xarapuca,
+                                **kwds)
+            elif name == 'fieldcage':  # Add this block
+                builder.configure(fieldcage_parameters=fieldcage_parameters,
+                                **kwds)
+            elif name == 'pmts':  # Add this block
+                builder.configure(pmt_parameters=pmt_parameters,
                                 **kwds)
 
 

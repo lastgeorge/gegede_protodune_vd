@@ -13,46 +13,35 @@ class FieldCageBuilder(gegede.builder.Builder):
     '''
 
     def configure(self, 
-                 FieldShaperInnerRadius=None,
-                 FieldShaperOuterRadius=None,
-                 FieldShaperSlimInnerRadius=None, 
-                 FieldShaperSlimOuterRadius=None,
-                 FieldShaperTorRad=None,
-                 FieldShaperSeparation=None,
-                 NFieldShapers=None,
-                 FieldShaperBaseLength=None,
-                 FieldShaperBaseWidth=None,
+                 fieldcage_parameters=None,
                  **kwds):
         
+        print('Configure Field Cage')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
-            
-        # Store basic parameters
-        self.params = {}
-        self.params.update(
-            FieldShaperInnerRadius = FieldShaperInnerRadius,
-            FieldShaperOuterRadius = FieldShaperOuterRadius,
-            FieldShaperSlimInnerRadius = FieldShaperSlimInnerRadius,
-            FieldShaperSlimOuterRadius = FieldShaperSlimOuterRadius,
-            FieldShaperTorRad = FieldShaperTorRad,
-            FieldShaperSeparation = FieldShaperSeparation,
-            NFieldShapers = NFieldShapers
-        )
-
-        # Calculate derived dimensions
-        # Length and width account for torus radius at ends
-        self.params['FieldShaperLength'] = FieldShaperBaseLength - 2*FieldShaperTorRad
-        self.params['FieldShaperWidth'] = FieldShaperBaseWidth - 2*FieldShaperTorRad
         
-        # Add small extension for cuts
-        self.params['FieldShaperCutLength'] = self.params['FieldShaperLength'] + Q('0.02cm')
-        self.params['FieldShaperCutWidth'] = self.params['FieldShaperWidth'] + Q('0.02cm')
+        if fieldcage_parameters:
+            self.inner_radius = fieldcage_parameters.get('FieldShaperInnerRadius')
+            self.outer_radius = fieldcage_parameters.get('FieldShaperOuterRadius')
+            self.slim_inner_radius = fieldcage_parameters.get('FieldShaperSlimInnerRadius')
+            self.slim_outer_radius = fieldcage_parameters.get('FieldShaperSlimOuterRadius')
+            self.tor_rad = fieldcage_parameters.get('FieldShaperTorRad')
+            self.separation = fieldcage_parameters.get('FieldShaperSeparation') 
+            self.n_shapers = fieldcage_parameters.get('NFieldShapers')
+            self.base_length = fieldcage_parameters.get('FieldShaperBaseLength')
+            self.base_width = fieldcage_parameters.get('FieldShaperBaseWidth')
 
-        # Calculate overall field cage dimensions
-        self.params['FieldCageSizeX'] = FieldShaperSeparation * NFieldShapers + Q('2cm')
-        self.params['FieldCageSizeY'] = self.params['FieldShaperWidth'] + Q('2cm') 
-        self.params['FieldCageSizeZ'] = self.params['FieldShaperLength'] + Q('2cm')
+            # Calculate derived dimensions
+            self.length = self.base_length - 2*self.tor_rad
+            self.width = self.base_width - 2*self.tor_rad
+            
+            self.cut_length = self.length + Q('0.02cm')
+            self.cut_width = self.width + Q('0.02cm')
+
+            self.cage_size_x = self.separation * self.n_shapers + Q('2cm')
+            self.cage_size_y = self.width + Q('2cm') 
+            self.cage_size_z = self.length + Q('2cm')
 
         # Mark as configured
         self._configured = True

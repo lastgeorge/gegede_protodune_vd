@@ -21,6 +21,7 @@ class CathodeBuilder(gegede.builder.Builder):
             tpc_params (dict): TPC parameters from parent builder
             **kwargs: Additional configuration parameters
         """
+        print('Configure Cathode')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return

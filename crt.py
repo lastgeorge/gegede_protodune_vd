@@ -32,6 +32,7 @@ class CRTBuilder(gegede.builder.Builder):
             OriginZSet (Quantity): Z origin coordinate
             **kwargs: Additional configuration parameters
         """
+        print('Configure CRT')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return

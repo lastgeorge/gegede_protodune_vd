@@ -25,6 +25,8 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         self.tpc = None
         self.steel = None
         self.cathode = None
+        self.fieldcage = None
+        self.pmt = None
 
         self.DetEncX = None
         self.DetEncY = None
@@ -41,10 +43,13 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
     def configure(self, cryostat_parameters=None, tpc_parameters=None, 
                  steel_parameters=None, beam_parameters=None, crt_parameters=None,
                  cathode_parameters=None, xarapuca_parameters=None,  # Add this line
+                 fieldcage_parameters=None,  # Add this line
+                 pmt_parameters=None,  # Add this line
                  DetEncX=None, DetEncY=None, DetEncZ=None, FoamPadding=None, 
                  OriginXSet=None, OriginYSet=None, OriginZSet=None,  # Add these
                  **kwds):
         
+        print('Configure ProtoDUNE-VD')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
@@ -70,6 +75,10 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
             self.cathode = cathode_parameters
         if xarapuca_parameters:  # Add this block
             self.xarapuca = xarapuca_parameters
+        if fieldcage_parameters:  # Add this block
+            self.fieldcage = fieldcage_parameters
+        if pmt_parameters:  # Add this block
+            self.pmt = pmt_parameters
 
         
         # Mark as configured
@@ -88,6 +97,8 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                                   tpc_parameters=self.tpc,
                                   cathode_parameters=self.cathode,
                                   xarapuca_parameters=self.xarapuca,  # Add this line
+                                  fieldcage_parameters=self.fieldcage,  # Add this line
+                                  pmt_parameters=self.pmt,  # Add this line
                                 **kwds)
             if name == 'crt':
                 builder.configure(crt_parameters=crt_parameters,
@@ -95,6 +106,12 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                                 OriginXSet=self.OriginXSet,  # Add these three lines
                                 OriginYSet=self.OriginYSet,
                                 OriginZSet=self.OriginZSet,
+                                **kwds)
+            if name == 'steelsupport':
+                builder.configure(steel_parameters=self.steel,
+                                **kwds)
+            if name == 'foam':
+                builder.configure(FoamPadding=self.FoamPadding,
                                 **kwds)
 
     def construct(self, geom):

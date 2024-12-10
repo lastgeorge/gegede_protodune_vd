@@ -21,8 +21,13 @@ class TPCBuilder(gegede.builder.Builder):
             self.add_builder(name, builder)
 
     def configure(self, tpc_parameters=None, **kwds):
+        print('Configure TPC')
+        if (hasattr(self, '_configured')):
+            return 
         # Store the parameters
         if tpc_parameters:
             self.tpc = tpc_parameters
+
+        self._configured = True
         
 

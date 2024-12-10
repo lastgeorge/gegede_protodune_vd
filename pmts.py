@@ -12,36 +12,21 @@ class PMTBuilder(gegede.builder.Builder):
     Implements both thick and slim field shapers arranged vertically.
     '''
 
-    # Define default parameters that can be overridden in configuration
-    defaults = dict(
-        pmt_TPB = [11,12,13,14,23,24],
-        pmt_left_rotated = [11,12,13,14], 
-        pmt_right_rotated = [21,22,23,24],
+    def configure(self, 
+                 pmt_parameters=None,
+                 **kwds):
         
-        # Basic dimensions
-        pmt_y_positions = [405.3, 170.0, 0, -170.0, -405.3],
-        pmt_z_positions = [306.0, 204.0, -204.0, -306.0, 68.1, 0],
-        
-        # Horizontal PMT positions
-        horizontal_pmt_pos_bot = -301.7,
-        horizontal_pmt_pos_top = -225.9,
-        horizontal_pmt_z = 228.9,
-        horizontal_pmt_y = 221.0,
-        
-        # PMT dimensions
-        pmt_radius = Q("6.5*2.54cm"),  
-        pmt_height = Q("11.1*2.54cm") - Q("1.877*2.54cm"),
-        pmt_coating_thickness = Q("0.2mm")
-    )
+        print('Configure PMTs')
+        if hasattr(self, '_configured'):
+            return
 
-    def configure(self, **kwargs):
-        # Update defaults with any overrides from configuration
-        self.params = self.defaults.copy()
-        self.params.update(kwargs)
+        if pmt_parameters:
+            self.params = pmt_parameters
         
         # Generate all PMT positions
         self.generate_pmt_positions()
-
+        
+        self._configured = True
 
     def generate_pmt_positions(self):
         '''Generate the full list of PMT positions'''
