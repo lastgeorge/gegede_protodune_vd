@@ -36,8 +36,7 @@ class XARAPUCABuilder(gegede.builder.Builder):
 
         # Calculate additional parameters
         if self.params and self.cathode:
-            # Calculate derived parameters
-            self.params['FCToArapucaSpaceLat'] = Q('65cm') + self.params['ArapucaOut_y']
+            
             
             # Calculate positions of the 4 arapucas with respect to the Frame center
             self.list_posx_bot = []
@@ -70,8 +69,8 @@ class XARAPUCABuilder(gegede.builder.Builder):
 
     def construct(self, geom):
         """Construct the X-ARAPUCA geometry."""
-        # if not self.params:
-        #     raise RuntimeError("XARAPUCABuilder not configured")
+        print('Construct XARAPUCA')
+    
 
         # # Create the main X-ARAPUCA shapes
         # main_shape = geom.shapes.Box(self.name + '_shape',

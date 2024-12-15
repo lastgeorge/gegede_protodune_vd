@@ -19,3 +19,7 @@ class FoamBuilder(gegede.builder.Builder):
             'FoamPadding': FoamPadding
         }
 
+    def construct(self, geom):
+        print('Construct Foam')
+        # TODO: Add Foam construction code
+

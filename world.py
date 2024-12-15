@@ -192,6 +192,8 @@ class WorldBuilder(gegede.builder.Builder):
         if xarapuca_parameters:  # Add this block
             eval_globals = {'Q': Q}
             self.xarapuca = eval(xarapuca_parameters, eval_globals)
+            # Calculate derived parameters
+            self.xarapuca['FCToArapucaSpaceLat'] = Q('65cm') + self.xarapuca['ArapucaOut_y']
 
         if fieldcage_parameters:  # Add this block
             eval_globals = {'Q': Q}
@@ -229,6 +231,8 @@ class WorldBuilder(gegede.builder.Builder):
     def construct_materials(self, geom):
         """Define all materials used in the geometry"""
     
+        print('Construct Materials')
+
         # Define elements first
         ni = geom.matter.Element("Nickel", "Ni", 28, "58.6934g/mole")
         cr = geom.matter.Element("Chromium", "Cr", 24, "51.9961g/mole")
@@ -282,6 +286,7 @@ class WorldBuilder(gegede.builder.Builder):
                                     ("Iron", 0.089)))
 
     def construct(self, geom):
+        print('Construct World')
         # Define materials first
         self.construct_materials(geom)
 

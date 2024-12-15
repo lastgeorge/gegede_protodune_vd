@@ -95,13 +95,13 @@ class CryostatBuilder(gegede.builder.Builder):
                                     dy=self.cryo['Argon_y']/2.0,
                                     dz=self.cryo['Argon_z']/2.0)
 
-        # # Subtract X-ARAPUCA spaces from gaseous argon
-        # arapuca_pos1 = [-0.5*self.cryo['HeightGaseousAr'] - self.cryo['Upper_xLArBuffer'] - 
-        #                 self.tpc['FirstFrameVertDist'] - self.tpc['ReadoutPlane'],
-        #                 -self.tpc['widthCathode'] - self.tpc['CathodeFrameToFC'] - 
-        #                 self.tpc['FCToArapucaSpaceLat'],
-        #                 -0.5*self.cryo['Argon_z'] + self.cryo['zLArBuffer'] + 
-        #                 0.5*self.tpc['lengthCathode']]
+        # Subtract X-ARAPUCA spaces from gaseous argon
+        arapuca_pos1 = [-0.5*self.cryo['HeightGaseousAr'] - self.cryo['Upper_xLArBuffer'] - 
+                        self.xarapuca['FirstFrameVertDist'] - self.tpc['ReadoutPlane'],
+                        -self.cathode['widthCathode'] - self.xarapuca['CathodeFrameToFC'] - 
+                        self.xarapuca['FCToArapucaSpaceLat'],
+                        -0.5*self.cryo['Argon_z'] + self.cryo['zLArBuffer'] + 
+                        0.5*self.cathode['lengthCathode']]
                         
         # gas_ar_sub1 = geom.shapes.Boolean(self.name + '_gasAr_sub1',
         #                                 type='subtraction',
@@ -109,10 +109,10 @@ class CryostatBuilder(gegede.builder.Builder):
         #                                 second=self.get_builder('xarapuca').get_volume().shape,
         #                                 pos=arapuca_pos1)
 
-        # # Second X-ARAPUCA subtraction with updated Y position
-        # arapuca_pos2 = [arapuca_pos1[0],
-        #                 -arapuca_pos1[1],  # Flip Y position
-        #                 arapuca_pos1[2]]
+        # Second X-ARAPUCA subtraction with updated Y position
+        arapuca_pos2 = [arapuca_pos1[0],
+                        -arapuca_pos1[1],  # Flip Y position
+                        arapuca_pos1[2]]
                         
         # gas_ar_shape_final = geom.shapes.Boolean(self.name + '_gasAr_final',
         #                                     type='subtraction',

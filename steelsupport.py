@@ -28,3 +28,7 @@ class SteelSupportBuilder(gegede.builder.Builder):
             }
         
     # ...existing code...
+
+    def construct(self, geom):
+        print('Construct Steel Support')
+        # TODO: Add Steel Support construction code

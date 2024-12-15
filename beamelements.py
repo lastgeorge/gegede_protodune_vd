@@ -183,3 +183,7 @@ class BeamElementsBuilder(gegede.builder.Builder):
                                         self.beam['BeamPlugMembPosDZ'])
             
             self._configured = True
+
+    def construct(self, geom):
+        print('Construct Beam Elements')
+        # TODO: Add Beam Elements construction code

@@ -45,3 +45,10 @@ class FieldCageBuilder(gegede.builder.Builder):
 
         # Mark as configured
         self._configured = True
+
+    def construct(self, geom):
+        '''Construct the Field Cage geometry'''
+
+        print('Construct Field Cage')
+        # TODO: Add Field Cage construction code
+        pass

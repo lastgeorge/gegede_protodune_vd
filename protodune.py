@@ -119,6 +119,8 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         Construct the geometry.
         '''     
 
+        print('Construct ProtoDUNE-VD')
+
         # Create the main volume
         main_shape = geom.shapes.Box(self.name + '_shape',
                                    dx=self.DetEncX,
