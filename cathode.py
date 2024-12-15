@@ -13,7 +13,7 @@ class CathodeBuilder(gegede.builder.Builder):
         super(CathodeBuilder, self).__init__(name)
         self.params = None
 
-    def configure(self, cathode_parameters=None, tpc_params=None, print_config=False, print_construct=False, **kwargs):
+    def configure(self, cathode_parameters=None, tpc_params=None,  print_config=False, print_construct=False, **kwargs):
         """Configure the cathode geometry.
         
         Args:
@@ -26,8 +26,8 @@ class CathodeBuilder(gegede.builder.Builder):
         if print_config:
             print('Configure Cathode <- Cryostat <- ProtoDUNE-VD <- World')
         # Add guard against double configuration
-        if hasattr(self, '_configured'):
-            return
+        # if hasattr(self, '_configured'):
+        #     return
             
         # Store cathode params
         if cathode_parameters:
@@ -71,7 +71,7 @@ class CathodeBuilder(gegede.builder.Builder):
             self.params.update(kwargs)
             
         # Mark as configured
-        self._configured = True
+        # self._configured = True
         self.print_construct = print_construct
 
     def construct(self, geom):
@@ -174,8 +174,8 @@ class CathodeBuilder(gegede.builder.Builder):
         self.mesh_vol = mesh_vol
         self.add_volume(mesh_vol)
 
-    def place_in_volume(self, geom, volume, argon_dim, params):
-        '''Place cathode modules in the given volume
+    def place_in_volume(self, geom, volume, argon_dim, params, xarapuca_builder=None):
+        '''Place cathode modules and associated X-ARAPUCAs in the given volume
         
         Args:
             geom: Geometry object 
@@ -195,8 +195,8 @@ class CathodeBuilder(gegede.builder.Builder):
         
 
         # print(argon_dim[0], argon_dim[1], argon_dim[2])
-        print(-argon_dim[1]/2, params['yLArBuffer'], self.params['widthCathode']/2)
-        print(-argon_dim[2]/2, params['zLArBuffer'], self.params['lengthCathode']/2)
+        # print(-argon_dim[1]/2, params['yLArBuffer'], self.params['widthCathode']/2)
+        # print(-argon_dim[2]/2, params['zLArBuffer'], self.params['lengthCathode']/2)
 
         cathode_vol = self.get_volume()
         mesh_vol = self.mesh_vol
@@ -205,15 +205,26 @@ class CathodeBuilder(gegede.builder.Builder):
         n_crm_z = params.get('nCRM_z', 4)  # Default 4 if not specified
         n_crm_x = params.get('nCRM_x', 4)  # Default 4 if not specified
 
+        # Get X-ARAPUCA volumes if builder is available
+        arapuca_wall = None
+        if xarapuca_builder:
+            arapuca_wall = xarapuca_builder.get_volume('volXARAPUCAWall')
+            arapuca_window = xarapuca_builder.get_volume('volXARAPUCAWindow')
+
         # Place cathodes and meshes in 2x2 grid
         for i in range(n_crm_x//2):  # y direction
             for j in range(n_crm_z//2):  # z direction
+                # Calculate center position of this cathode module
+                module_x = cathode_x
+                module_y = base_y + i*self.params['widthCathode']
+                module_z = base_z + j*self.params['lengthCathode']
+
                 # Place cathode frame
                 pos = geom.structure.Position(
                     f"{self.name}_pos_{i}_{j}",
-                    x=cathode_x,
-                    y=base_y + i*self.params['widthCathode'],
-                    z=base_z + j*self.params['lengthCathode']
+                    x=module_x,
+                    y=module_y,
+                    z=module_z
                 )
                 
                 place = geom.structure.Placement(
@@ -223,6 +234,29 @@ class CathodeBuilder(gegede.builder.Builder):
                 )
                 
                 volume.placements.append(place.name)
+
+                # Place X-ARAPUCAs associated with this cathode module
+                if xarapuca_builder and arapuca_wall:
+                    # Calculate X-ARAPUCA positions relative to this cathode module
+                    arapuca_positions = xarapuca_builder.calculate_cathode_positions(
+                        module_x, module_y, module_z
+                    )
+                    
+                    # Place each X-ARAPUCA
+                    for idx, (x, y, z) in enumerate(arapuca_positions):
+                        print (idx, x, y, z)
+                        arapuca_pos = geom.structure.Position(
+                            f"pos_cathode_{i}_{j}_xarapuca_{idx}",
+                            x=x, y=y, z=z
+                        )
+                        
+                        arapuca_place = geom.structure.Placement(
+                            f"place_cathode_{i}_{j}_xarapuca_{idx}",
+                            volume=arapuca_wall,
+                            pos=arapuca_pos
+                        )
+                        
+                        volume.placements.append(arapuca_place.name)
 
                 # Place mesh in each void position
                 for void_idx, (void_y, void_z) in enumerate(self.params['void_positions']):

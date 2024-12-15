@@ -133,17 +133,17 @@ class XARAPUCABuilder(gegede.builder.Builder):
             # Use the existing position calculations from PERL
             x = cathode_center_x  
             if i == 0:
-                y = -2*self.cathode['widthCathodeVoid'] - 2.0*self.cathode['CathodeBorder'] + self.params['GapPD'] + 0.5*self.params['ArapucaOut_x']
-                z = 0.5*self.cathode['lengthCathodeVoid'] + self.cathode['CathodeBorder']
+                y = -2*self.cathode['widthCathodeVoid'] - 2.0*self.cathode['CathodeBorder'] + self.params['GapPD'] + 0.5*self.params['ArapucaOut_x'] + cathode_center_y
+                z = 0.5*self.cathode['lengthCathodeVoid'] + self.cathode['CathodeBorder'] + cathode_center_z
             elif i == 1:
-                y = -self.cathode['CathodeBorder'] - self.params['GapPD'] - 0.5*self.params['ArapucaOut_x']
-                z = -1.5*self.cathode['lengthCathodeVoid'] - 2.0*self.cathode['CathodeBorder']
+                y = -self.cathode['CathodeBorder'] - self.params['GapPD'] - 0.5*self.params['ArapucaOut_x'] + cathode_center_y
+                z = -1.5*self.cathode['lengthCathodeVoid'] - 2.0*self.cathode['CathodeBorder'] + cathode_center_z
             elif i == 2:
-                y = -y  # Mirror of position 1
-                z = -z
+                y = -(-self.cathode['CathodeBorder'] - self.params['GapPD'] - 0.5*self.params['ArapucaOut_x']) + cathode_center_y
+                z = -(-1.5*self.cathode['lengthCathodeVoid'] - 2.0*self.cathode['CathodeBorder']) + cathode_center_z
             else:
-                y = -y  # Mirror of position 0
-                z = -z
+                y = -(-2*self.cathode['widthCathodeVoid'] - 2.0*self.cathode['CathodeBorder'] + self.params['GapPD'] + 0.5*self.params['ArapucaOut_x']) + cathode_center_y # Mirror of position 0
+                z = -(0.5*self.cathode['lengthCathodeVoid'] + self.cathode['CathodeBorder']) + cathode_center_z # Mirror of position 0
                 
             positions.append((x,y,z))
             

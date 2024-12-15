@@ -60,6 +60,7 @@ class CryostatBuilder(gegede.builder.Builder):
         self.fieldcage_switch = fieldcage_switch  # Add this line
         self.arapucamesh_switch = arapucamesh_switch  # Add this line
 
+        self.print_config = print_config
         self.print_construct = print_construct
         # Mark as configured
         self._configured = True
@@ -79,6 +80,7 @@ class CryostatBuilder(gegede.builder.Builder):
                                   **kwds)
             elif name == 'xarapuca':
                 builder.configure(xarapuca_parameters=self.xarapuca,
+                                  cathode_parameters=self.cathode,
                                   print_config=print_config,
                                   print_construct=print_construct,  
                                   **kwds)
@@ -219,7 +221,18 @@ class CryostatBuilder(gegede.builder.Builder):
 
         if self.cathode_switch:
             cathode_builder = self.get_builder('cathode')
+            xarapuca_builder = self.get_builder('xarapuca')
+        
             if cathode_builder:
+                # # Configure cathode builder with xarapuca builder
+                # cathode_builder.configure(
+                #     cathode_parameters=self.cathode,
+                #     tpc_params=self.tpc,
+                #     xarapuca_builder=xarapuca_builder,
+                #     print_config=self.print_config,
+                #     print_construct=self.print_construct
+                # )
+                
                 # Create dictionary of placement parameters
                 placement_params = {
                     'HeightGaseousAr': self.cryo['HeightGaseousAr'],
@@ -234,27 +247,6 @@ class CryostatBuilder(gegede.builder.Builder):
                 
                 # Call placement function
                 argon_dim = (self.cryo['Argon_x'], self.cryo['Argon_y'], self.cryo['Argon_z'])
-                cathode_builder.place_in_volume(geom, argon_vol, argon_dim, placement_params)
-
+                cathode_builder.place_in_volume(geom, argon_vol, argon_dim, placement_params, xarapuca_builder)
 
         self.add_volume(cryo_vol)
-
-    
-
-        # # Get positions for cathode-mounted X-ARAPUCAs
-        # cathode_positions = xarapuca_builder.calculate_cathode_positions(
-        #     self.cathode_center_x,
-        #     self.cathode_center_y, 
-        #     self.cathode_center_z
-        # )
-
-        # # Place cathode X-ARAPUCAs
-        # for i,pos in enumerate(cathode_positions):
-        #     # Create position
-        #     pos_name = f"pos_cathode_xarapuca_{i}"
-        #     geom_pos = geom.structure.Position(pos_name, x=pos[0], y=pos[1], z=pos[2])
-            
-        #     # Create placement
-        #     place_name = f"place_cathode_xarapuca_{i}"
-        #     place = geom.structure.Placement(place_name, volume=arapuca_vol, pos=pos_name)
-        #     self.vol.placements.append(place.name)
