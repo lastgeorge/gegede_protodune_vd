@@ -100,6 +100,8 @@ class WorldBuilder(gegede.builder.Builder):
             self.cryo['zLArBuffer'] = (self.cryo['Argon_z'] - 
                                       self.tpc['lengthTPCActive']) * 0.5
             
+            # print(self.tpc['lengthTPCActive'],self.tpc['widthTPCActive'],self.tpc['ReadoutPlane'])
+            
             self.cryo['Cryostat_x'] = self.cryo['Argon_x'] + 2 * self.cryo['SteelThickness']
             self.cryo['Cryostat_y'] = self.cryo['Argon_y'] + 2 * self.cryo['SteelThickness']
             self.cryo['Cryostat_z'] = self.cryo['Argon_z'] + 2 * self.cryo['SteelThickness']

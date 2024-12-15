@@ -190,15 +190,24 @@ class CathodeBuilder(gegede.builder.Builder):
                     (params['driftTPCActive'] + params['ReadoutPlane']) - \
                     self.params['heightCathode']/2
                     
-        base_y = -argon_dim[1]/2 + params['yLArBuffer'] + self.params['widthCathode']/2
-        base_z = -argon_dim[2]/2 + params['zLArBuffer'] + self.params['lengthCathode']/2
+        base_y = -argon_dim[1]/2 + params['yLArBuffer'] + self.params['widthCathode']/2  
+        base_z = -argon_dim[2]/2 + params['zLArBuffer'] + self.params['lengthCathode']/2 
         
+
+        # print(argon_dim[0], argon_dim[1], argon_dim[2])
+        print(-argon_dim[1]/2, params['yLArBuffer'], self.params['widthCathode']/2)
+        print(-argon_dim[2]/2, params['zLArBuffer'], self.params['lengthCathode']/2)
+
         cathode_vol = self.get_volume()
         mesh_vol = self.mesh_vol
 
+        # Get CRM dimensions from params 
+        n_crm_z = params.get('nCRM_z', 4)  # Default 4 if not specified
+        n_crm_x = params.get('nCRM_x', 4)  # Default 4 if not specified
+
         # Place cathodes and meshes in 2x2 grid
-        for i in range(2):  # y direction
-            for j in range(2):  # z direction
+        for i in range(n_crm_x//2):  # y direction
+            for j in range(n_crm_z//2):  # z direction
                 # Place cathode frame
                 pos = geom.structure.Position(
                     f"{self.name}_pos_{i}_{j}",

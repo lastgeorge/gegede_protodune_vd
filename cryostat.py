@@ -227,7 +227,9 @@ class CryostatBuilder(gegede.builder.Builder):
                     'driftTPCActive': self.tpc['driftTPCActive'],
                     'ReadoutPlane': self.tpc['ReadoutPlane'],
                     'yLArBuffer': self.cryo['yLArBuffer'],
-                    'zLArBuffer': self.cryo['zLArBuffer']
+                    'zLArBuffer': self.cryo['zLArBuffer'],
+                    'nCRM_z': self.tpc['nCRM_z'],
+                    'nCRM_x': self.tpc['nCRM_x']
                 }
                 
                 # Call placement function
