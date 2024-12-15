@@ -16,15 +16,18 @@ class XARAPUCABuilder(gegede.builder.Builder):
         self.params = None
         self.cathode = None
 
-    def configure(self, xarapuca_parameters=None, cathode_parameters=None, **kwargs):
+    def configure(self, xarapuca_parameters=None, cathode_parameters=None, print_config=False, print_construct=False, **kwargs):
         """Configure the X-ARAPUCA geometry.
         
         Args:
             xarapuca_parameters: Dictionary containing X-ARAPUCA parameters
             cathode_parameters: Dictionary containing cathode parameters
+            print_config: Whether to print configuration info
+            print_construct: Whether to print construct info
             **kwargs: Additional configuration parameters
         """
-        print('Configure XARAPUCA')
+        if print_config:
+            print('Configure XARAPUCA <- Cryostat <- ProtoDUNE-VD <- World')
         if hasattr(self, '_configured'):
             return
         
@@ -33,6 +36,8 @@ class XARAPUCABuilder(gegede.builder.Builder):
             self.params = xarapuca_parameters
         if cathode_parameters:
             self.cathode = cathode_parameters
+
+        self.print_construct = print_construct
 
         # Calculate additional parameters
         if self.params and self.cathode:
@@ -69,7 +74,8 @@ class XARAPUCABuilder(gegede.builder.Builder):
 
     def construct(self, geom):
         """Construct the X-ARAPUCA geometry."""
-        print('Construct XARAPUCA')
+        if self.print_construct:
+            print('Construct XARAPUCA <- Cryostat <- ProtoDUNE-VD <- World')
     
 
         # # Create the main X-ARAPUCA shapes

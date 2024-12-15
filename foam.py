@@ -11,15 +11,21 @@ class FoamBuilder(gegede.builder.Builder):
 
     def configure(self,
                  FoamPadding=None,
+                 print_config=False,  
+                 print_construct=False,  # Add this line
                  **kwargs):
         
-        print('Configure Foam')
+        if print_config:
+            print('Configure Foam <- ProtoDUNE-VD <- World')
         
+        self.print_construct = print_construct
+
         self.params = {
             'FoamPadding': FoamPadding
         }
 
     def construct(self, geom):
-        print('Construct Foam')
+        if self.print_construct:
+            print('Construct Foam <- ProtoDUNE-VD <- World')
         # TODO: Add Foam construction code
 

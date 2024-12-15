@@ -11,10 +11,15 @@ class SteelSupportBuilder(gegede.builder.Builder):
 
     def configure(self,
                  steel_parameters=None,
+                 print_config=False,  
+                 print_construct=False,  # Add this line
                  **kwargs):
         
-        print('Configure Steel Support')
+        if print_config:
+            print('Configure Steel Support  <- ProtoDUNE-VD <- World')
         
+        self.print_construct = print_construct
+
         if steel_parameters:
             self.params = {
                 'SteelSupport_x': steel_parameters.get('SteelSupport_x'),
@@ -30,5 +35,6 @@ class SteelSupportBuilder(gegede.builder.Builder):
     # ...existing code...
 
     def construct(self, geom):
-        print('Construct Steel Support')
+        if self.print_construct:
+            print('Construct Steel Support <- ProtoDUNE-VD <- World') 
         # TODO: Add Steel Support construction code

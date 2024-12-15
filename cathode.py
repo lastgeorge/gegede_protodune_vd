@@ -13,15 +13,18 @@ class CathodeBuilder(gegede.builder.Builder):
         super(CathodeBuilder, self).__init__(name)
         self.params = None
 
-    def configure(self, cathode_parameters=None, tpc_params=None, **kwargs):
+    def configure(self, cathode_parameters=None, tpc_params=None, print_config=False, print_construct=False, **kwargs):
         """Configure the cathode geometry.
         
         Args:
             cathode_parameters (dict): Cathode parameters from config
             tpc_params (dict): TPC parameters from parent builder
+            print_config (bool): Whether to print configuration info
+            print_construct (bool): Whether to print construction info
             **kwargs: Additional configuration parameters
         """
-        print('Configure Cathode')
+        if print_config:
+            print('Configure Cathode <- Cryostat <- ProtoDUNE-VD <- World')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
@@ -48,8 +51,11 @@ class CathodeBuilder(gegede.builder.Builder):
             
         # Mark as configured
         self._configured = True
+        self.print_construct = print_construct
 
     def construct(self, geom):
         '''Construct the cathode geometry'''
+        if self.print_construct:
+            print('Construct Cathode <- Cryostat <- ProtoDUNE-VD <- World')
         # TODO: Add cathode construction code
         pass

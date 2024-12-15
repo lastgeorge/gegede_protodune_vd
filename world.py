@@ -34,13 +34,17 @@ class WorldBuilder(gegede.builder.Builder):
     def configure(self, material='Air', width=None, height=None, depth=None, 
                  tpc_parameters=None, cryostat_parameters=None, 
                  steel_parameters=None, beam_parameters=None, crt_parameters=None,
-                 cathode_parameters=None, xarapuca_parameters=None,  # Add this line
-                 fieldcage_parameters=None,  # Add this line
-                 pmt_parameters=None,  # Add this line
-                 FoamPadding=None, AirThickness=None, DP_CRT_switch=None, **kwds):
+                 cathode_parameters=None, xarapuca_parameters=None,  
+                 fieldcage_parameters=None,  
+                 pmt_parameters=None,  
+                 FoamPadding=None, AirThickness=None, DP_CRT_switch=None, 
+                 print_config=False,  
+                 print_construct=False,  # Add this line
+                 **kwds):
         self.material = material
         
-        print('Configure World')
+        if print_config:
+            print('Configure World')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
@@ -203,6 +207,7 @@ class WorldBuilder(gegede.builder.Builder):
             eval_globals = {'Q': Q}
             self.pmt = eval(pmt_parameters, eval_globals)
 
+        self.print_construct = print_construct
         # Mark as configured
         self._configured = True
 
@@ -215,9 +220,9 @@ class WorldBuilder(gegede.builder.Builder):
                                   beam_parameters=self.beam,
                                   crt_parameters=self.crt,
                                   cathode_parameters=self.cathode,
-                                  xarapuca_parameters=self.xarapuca,  # Add this line
-                                  fieldcage_parameters=self.fieldcage,  # Add this line
-                                  pmt_parameters=self.pmt,  # Add this line
+                                  xarapuca_parameters=self.xarapuca,  
+                                  fieldcage_parameters=self.fieldcage,  
+                                  pmt_parameters=self.pmt,  
                                   DetEncX=self.DetEncX,
                                   DetEncY=self.DetEncY,
                                   DetEncZ=self.DetEncZ,
@@ -225,13 +230,16 @@ class WorldBuilder(gegede.builder.Builder):
                                   OriginXSet=self.OriginXSet,
                                   OriginYSet=self.OriginYSet,
                                   OriginZSet=self.OriginZSet,
+                                  print_config=print_config,
+                                  print_construct=print_construct,  # Add this line
                                 **kwds)
 
     # define materials ...
     def construct_materials(self, geom):
         """Define all materials used in the geometry"""
     
-        print('Construct Materials')
+        if(self.print_construct):
+            print('Define Materials')
 
         # Define elements first
         ni = geom.matter.Element("Nickel", "Ni", 28, "58.6934g/mole")
@@ -286,9 +294,11 @@ class WorldBuilder(gegede.builder.Builder):
                                     ("Iron", 0.089)))
 
     def construct(self, geom):
-        print('Construct World')
+        if self.print_construct:
+            print('Construct World')
         # Define materials first
         self.construct_materials(geom)
+        # ...existing code...
 
         # print("A", self.DetEncX, self.DetEncY, self.DetEncZ)    
 

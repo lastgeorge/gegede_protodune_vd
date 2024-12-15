@@ -14,9 +14,12 @@ class FieldCageBuilder(gegede.builder.Builder):
 
     def configure(self, 
                  fieldcage_parameters=None,
+                 print_config=False,
+                 print_construct=False,
                  **kwds):
         
-        print('Configure Field Cage')
+        if print_config:
+            print('Configure Field Cage <- Cryostat <- ProtoDUNE-VD <- World')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
@@ -43,12 +46,15 @@ class FieldCageBuilder(gegede.builder.Builder):
             self.cage_size_y = self.width + Q('2cm') 
             self.cage_size_z = self.length + Q('2cm')
 
+        self.print_construct = print_construct
+
         # Mark as configured
         self._configured = True
 
     def construct(self, geom):
         '''Construct the Field Cage geometry'''
 
-        print('Construct Field Cage')
+        if self.print_construct:
+            print('Construct Field Cage <- Cryostat <- ProtoDUNE-VD <- World')
         # TODO: Add Field Cage construction code
         pass

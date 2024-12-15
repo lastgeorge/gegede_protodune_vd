@@ -33,9 +33,14 @@ class CryostatBuilder(gegede.builder.Builder):
         #     self.add_builder(name, builder)
 
     def configure(self, cryostat_parameters=None, tpc_parameters=None, 
-                 cathode_parameters=None, xarapuca_parameters=None, fieldcage_parameters=None, pmt_parameters=None, **kwds):  # Add pmt_parameters
+                 cathode_parameters=None, xarapuca_parameters=None, 
+                 fieldcage_parameters=None, pmt_parameters=None,  
+                 print_config=False,  
+                 print_construct=False,  # Add this line
+                 **kwds):  
 
-        print('Configure Cryostat')
+        if print_config:
+            print('Configure Cryostat <- ProtoDUNE-VD <- World')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
@@ -50,6 +55,7 @@ class CryostatBuilder(gegede.builder.Builder):
         if xarapuca_parameters:  # Add this block
             self.xarapuca = xarapuca_parameters
         
+        self.print_construct = print_construct
         # Mark as configured
         self._configured = True
 
@@ -57,24 +63,34 @@ class CryostatBuilder(gegede.builder.Builder):
         for name, builder in self.builders.items():
             if name == 'tpcs':
                 builder.configure(tpc_parameters=self.tpc,
-                                **kwds)
+                                  print_config=print_config,
+                                  print_construct=print_construct,  # Add this line
+                                  **kwds)
             elif name == 'cathode':
                 builder.configure(tpc_params=self.tpc,
-                                cathode_parameters=self.cathode,  # Add this line
-                                **kwds)
+                                  cathode_parameters=self.cathode,
+                                  print_config=print_config,
+                                  print_construct=print_construct,  # Add this line
+                                  **kwds)
             elif name == 'xarapuca':
                 builder.configure(xarapuca_parameters=self.xarapuca,
-                                **kwds)
-            elif name == 'fieldcage':  # Add this block
+                                  print_config=print_config,
+                                  print_construct=print_construct,  # Add this line
+                                  **kwds)
+            elif name == 'fieldcage':
                 builder.configure(fieldcage_parameters=fieldcage_parameters,
-                                **kwds)
-            elif name == 'pmts':  # Add this block
+                                  print_config=print_config,
+                                  print_construct=print_construct,  # Add this line
+                                  **kwds)
+            elif name == 'pmts':
                 builder.configure(pmt_parameters=pmt_parameters,
-                                **kwds)
-
-
+                                  print_config=print_config,
+                                  print_construct=print_construct,  # Add this line
+                                  **kwds)
 
     def construct(self, geom):
+        if self.print_construct:
+            print('Construct Cryostat <- ProtoDUNE-VD <- World')
         '''Construct the cryostat and place components'''
         
         # Create the main cryostat shape

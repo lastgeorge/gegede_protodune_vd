@@ -42,14 +42,17 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
 
     def configure(self, cryostat_parameters=None, tpc_parameters=None, 
                  steel_parameters=None, beam_parameters=None, crt_parameters=None,
-                 cathode_parameters=None, xarapuca_parameters=None,  # Add this line
-                 fieldcage_parameters=None,  # Add this line
-                 pmt_parameters=None,  # Add this line
+                 cathode_parameters=None, xarapuca_parameters=None,  
+                 fieldcage_parameters=None,  
+                 pmt_parameters=None,  
                  DetEncX=None, DetEncY=None, DetEncZ=None, FoamPadding=None, 
-                 OriginXSet=None, OriginYSet=None, OriginZSet=None,  # Add these
+                 OriginXSet=None, OriginYSet=None, OriginZSet=None,  
+                 print_config=False,  
+                 print_construct=False,  # Add this line
                  **kwds):
         
-        print('Configure ProtoDUNE-VD')
+        if print_config:
+            print('Configure ProtoDUNE-VD <- World')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
@@ -73,14 +76,14 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
             self.steel = steel_parameters
         if cathode_parameters:
             self.cathode = cathode_parameters
-        if xarapuca_parameters:  # Add this block
+        if xarapuca_parameters:  
             self.xarapuca = xarapuca_parameters
-        if fieldcage_parameters:  # Add this block
+        if fieldcage_parameters:  
             self.fieldcage = fieldcage_parameters
-        if pmt_parameters:  # Add this block
+        if pmt_parameters:  
             self.pmt = pmt_parameters
 
-        
+        self.print_construct = print_construct
         # Mark as configured
         self._configured = True
 
@@ -88,38 +91,45 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         for name, builder in self.builders.items():
             if name == 'beamelements':
                 builder.configure(steel_parameters=self.steel,
-                                cryostat_parameters=self.cryo,
-                                beam_parameters=beam_parameters,
-                                FoamPadding=self.FoamPadding,
-                                **kwds)
+                    cryostat_parameters=self.cryo,
+                    beam_parameters=beam_parameters,
+                    FoamPadding=self.FoamPadding,
+                    print_config=print_config,  # Add this line
+                    print_construct=print_construct,  # Add this line
+                    **kwds)
             if name == 'cryostat':
                 builder.configure(cryostat_parameters=self.cryo,
-                                  tpc_parameters=self.tpc,
-                                  cathode_parameters=self.cathode,
-                                  xarapuca_parameters=self.xarapuca,  # Add this line
-                                  fieldcage_parameters=self.fieldcage,  # Add this line
-                                  pmt_parameters=self.pmt,  # Add this line
-                                **kwds)
+                      tpc_parameters=self.tpc,
+                      cathode_parameters=self.cathode,
+                      xarapuca_parameters=self.xarapuca,  
+                      fieldcage_parameters=self.fieldcage,  
+                      pmt_parameters=self.pmt,  
+                      print_config=print_config,  # Add this line
+                      print_construct=print_construct,  # Add this line
+                      **kwds)
             if name == 'crt':
                 builder.configure(crt_parameters=crt_parameters,
-                                steel_parameters=self.steel,
-                                OriginXSet=self.OriginXSet,  # Add these three lines
-                                OriginYSet=self.OriginYSet,
-                                OriginZSet=self.OriginZSet,
-                                **kwds)
+                    steel_parameters=self.steel,
+                    OriginXSet=self.OriginXSet,  
+                    OriginYSet=self.OriginYSet,
+                    OriginZSet=self.OriginZSet,
+                    print_config=print_config,  # Add this line
+                    print_construct=print_construct,  # Add this line
+                    **kwds)
             if name == 'steelsupport':
                 builder.configure(steel_parameters=self.steel,
-                                **kwds)
+                    print_config=print_config,  # Add this line
+                    print_construct=print_construct,  # Add this line
+                    **kwds)
             if name == 'foam':
                 builder.configure(FoamPadding=self.FoamPadding,
-                                **kwds)
+                    print_config=print_config,  # Add this line
+                    print_construct=print_construct,  # Add this line
+                    **kwds)
 
     def construct(self, geom):
-        '''
-        Construct the geometry.
-        '''     
-
-        print('Construct ProtoDUNE-VD')
+        if self.print_construct:
+            print('Construct ProtoDUNE-VD <- World')
 
         # Create the main volume
         main_shape = geom.shapes.Box(self.name + '_shape',

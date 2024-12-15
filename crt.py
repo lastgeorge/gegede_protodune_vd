@@ -21,7 +21,10 @@ class CRTBuilder(gegede.builder.Builder):
         self.OriginZSet = None
 
     def configure(self, crt_parameters=None, steel_parameters=None, 
-                 OriginXSet=None, OriginYSet=None, OriginZSet=None, **kwargs):
+                 OriginXSet=None, OriginYSet=None, OriginZSet=None, 
+                 print_config=False,  
+                 print_construct=False,  # Add this line
+                 **kwargs):
         """Configure the CRT geometry.
         
         Args:
@@ -30,9 +33,12 @@ class CRTBuilder(gegede.builder.Builder):
             OriginXSet (Quantity): X origin coordinate 
             OriginYSet (Quantity): Y origin coordinate
             OriginZSet (Quantity): Z origin coordinate
+            print_config (bool): Flag to control printing
+            print_construct (bool): Flag to control printing during construction
             **kwargs: Additional configuration parameters
         """
-        print('Configure CRT')
+        if print_config:
+            print('Configure CRT <- ProtoDUNE-VD <- World')
         # Add guard against double configuration
         if hasattr(self, '_configured'):
             return
@@ -47,6 +53,8 @@ class CRTBuilder(gegede.builder.Builder):
         self.OriginXSet = OriginXSet
         self.OriginYSet = OriginYSet 
         self.OriginZSet = OriginZSet
+
+        self.print_construct = print_construct
 
         # Mark as configured
         self._configured = True
@@ -141,6 +149,8 @@ class CRTBuilder(gegede.builder.Builder):
         self.BeamSpot_z = self.steel['posCryoInDetEnc']['z'] + self.crt['CRTSurveyOrigin_z'] + self.crt['BeamSpotDSS_z'] + self.OriginZSet
 
     def construct(self, geom):
+        if self.print_construct:
+            print('Construct CRT <- ProtoDUNE-VD <- World')
         '''Construct the CRT geometry'''
         # TODO: Add CRT construction code
         pass

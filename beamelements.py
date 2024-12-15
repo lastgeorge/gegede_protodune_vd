@@ -42,10 +42,14 @@ class BeamElementsBuilder(gegede.builder.Builder):
         self.beam['DeltaYZ3'] = math.tan(BeamTheta3)*math.sin(BeamPhi3)
 
     def configure(self, steel_parameters=None, cryostat_parameters=None, 
-                 beam_parameters=None, FoamPadding=None, **kwargs):
+                 beam_parameters=None, FoamPadding=None, 
+                 print_config=False,  
+                 print_construct=False,  # Add this line
+                 **kwargs):
         """Configure beam parameters"""
         
-        print('Configure BeamElements')
+        if print_config:
+            print('Configure BeamElements <- ProtoDUNE-VD <- World')
         if hasattr(self, '_configured'):
             return
 
@@ -184,6 +188,7 @@ class BeamElementsBuilder(gegede.builder.Builder):
             
             self._configured = True
 
-    def construct(self, geom):
-        print('Construct Beam Elements')
+    def construct(self, geom, print_construct=False):  # Add this line
+        if print_construct:
+            print('Construct Beam Elements <- ProtoDUNE-VD <- World')
         # TODO: Add Beam Elements construction code

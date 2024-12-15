@@ -14,9 +14,12 @@ class PMTBuilder(gegede.builder.Builder):
 
     def configure(self, 
                  pmt_parameters=None,
+                 print_config=False,
+                 print_construct=False,
                  **kwds):
         
-        print('Configure PMTs')
+        if print_config:
+            print('Configure PMTs <- Cryostat <- ProtoDUNE-VD <- World')
         if hasattr(self, '_configured'):
             return
 
@@ -27,6 +30,7 @@ class PMTBuilder(gegede.builder.Builder):
         self.generate_pmt_positions()
         
         self._configured = True
+        self.print_construct = print_construct
 
     def generate_pmt_positions(self):
         '''Generate the full list of PMT positions'''
@@ -79,3 +83,8 @@ class PMTBuilder(gegede.builder.Builder):
             make_pos(x=htop, y=-hy, z=-hz),      # pos23 - x=-225.9, y=-221.0, z=-228.9
             make_pos(x=hbot, y=-hy, z=-hz),      # pos24 - x=-301.7, y=-221.0, z=-228.9
         ])
+
+    def construct(self, geom):
+        if self.print_construct:
+            print('Construct PMTs <- Cryostat <- ProtoDUNE-VD <- World')
+        # ...existing code...

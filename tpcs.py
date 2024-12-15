@@ -20,14 +20,21 @@ class TPCBuilder(gegede.builder.Builder):
         for name, builder in self.builders.items():
             self.add_builder(name, builder)
 
-    def configure(self, tpc_parameters=None, **kwds):
-        print('Configure TPC')
+    def configure(self, tpc_parameters=None, print_config=False, print_construct=False, **kwds):
+        if print_config:
+            print('Configure TPC <- Cryostat <- ProtoDUNE-VD <- World')
         if (hasattr(self, '_configured')):
             return 
         # Store the parameters
         if tpc_parameters:
             self.tpc = tpc_parameters
 
+        self.print_construct = print_construct
         self._configured = True
-        
+
+    def construct(self, geom):
+        if self.print_construct:
+            print('Construct TPC <- Cryostat <- ProtoDUNE-VD <- World')
+        # ...existing code...
+
 
