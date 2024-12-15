@@ -124,7 +124,7 @@ class XARAPUCABuilder(gegede.builder.Builder):
         self.add_volume(wall_vol)
         self.add_volume(window_vol)
 
-    def calculate_cathode_positions(self, cathode_center_x, cathode_center_y, cathode_center_z):
+    def calculate_cathode_positions(self, idx, cathode_center_x, cathode_center_y, cathode_center_z):
         '''Calculate positions of X-ARAPUCAs over the cathode'''
         positions = []
         
@@ -145,6 +145,9 @@ class XARAPUCABuilder(gegede.builder.Builder):
                 y = -(-2*self.cathode['widthCathodeVoid'] - 2.0*self.cathode['CathodeBorder'] + self.params['GapPD'] + 0.5*self.params['ArapucaOut_x']) + cathode_center_y # Mirror of position 0
                 z = -(0.5*self.cathode['lengthCathodeVoid'] + self.cathode['CathodeBorder']) + cathode_center_z # Mirror of position 0
                 
+            if (idx == 1 and i == 3):
+                y = -(-self.cathode['CathodeBorder'] - self.params['GapPD'] - 0.5*self.params['ArapucaOut_x']) + cathode_center_y
+
             positions.append((x,y,z))
             
         return positions

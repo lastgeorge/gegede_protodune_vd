@@ -45,14 +45,23 @@ class CathodeBuilder(gegede.builder.Builder):
             for i in range(4):  # rows
                 for j in range(4):  # columns
                     # Calculate x position
-                    x = (i - 1.5) * self.params['widthCathodeVoid'] + \
-                        (i - 2) * self.params['CathodeBorder']
+                    if i < 2:
+                        x = (i - 1.5) * self.params['widthCathodeVoid'] + \
+                            (i - 2) * self.params['CathodeBorder']
+                    else:
+                        x = (i - 1.5) * self.params['widthCathodeVoid'] + \
+                            (i - 1) * self.params['CathodeBorder']
                     
-                    # Calculate z position    
-                    z = (j - 1.5) * self.params['lengthCathodeVoid'] + \
-                        (j - 2) * self.params['CathodeBorder']
+                    if j < 2:
+                        z = (j - 1.5) * self.params['lengthCathodeVoid'] + \
+                            (j - 2) * self.params['CathodeBorder']
+                    else:
+                        z = (j - 1.5) * self.params['lengthCathodeVoid'] + \
+                            (j - 1) * self.params['CathodeBorder']
                     
                     self.params['void_positions'].append([x, z])
+
+
         
         # Store TPC params we need
         if tpc_params:
@@ -236,15 +245,15 @@ class CathodeBuilder(gegede.builder.Builder):
                     z=module_z
                 )
                 if (i==0):
-                    place = geom.structure.Placement(
+                    place = geom.structure.Placement( 
                         f"{self.name}_place_{i}_{j}",
-                        volume=cathode_vol_1,
+                        volume=cathode_vol_1, # Place non-TCO cathode
                         pos=pos
                     )
                 else:
                     place = geom.structure.Placement(
                         f"{self.name}_place_{i}_{j}",
-                        volume=cathode_vol_2,
+                        volume=cathode_vol_2, # Place TCO cathode
                         pos=pos
                     )
                 volume.placements.append(place.name)
@@ -255,7 +264,7 @@ class CathodeBuilder(gegede.builder.Builder):
                     # rot = geom.structure.getRotation('rPlus90AboutXPlus90AboutZ')
                     
                     # Calculate X-ARAPUCA positions relative to this cathode module
-                    arapuca_positions = xarapuca_builder.calculate_cathode_positions(
+                    arapuca_positions = xarapuca_builder.calculate_cathode_positions(i,
                         module_x, module_y, module_z
                     )
                     
