@@ -108,13 +108,21 @@ class CathodeBuilder(gegede.builder.Builder):
                     z=void_z))
 
         # Create main cathode volume with G10 material  
-        cathode_vol = geom.structure.Volume(
-            self.name+"_volume", 
+        cathode_vol_1 = geom.structure.Volume(
+            self.name+"_volume_TCO", 
             material="G10",
             shape=shape)
+        
+        cathode_vol_2 = geom.structure.Volume(
+            self.name+"_volume_nonTCO", 
+            material="G10",
+            shape=shape)
+        
+
 
         # Add main volume to builder
-        self.add_volume(cathode_vol)
+        self.add_volume(cathode_vol_1)
+        self.add_volume(cathode_vol_2)
 
         # Create mesh rod shapes
         mesh_rod_vertical = geom.shapes.Box(
@@ -198,7 +206,8 @@ class CathodeBuilder(gegede.builder.Builder):
         # print(-argon_dim[1]/2, params['yLArBuffer'], self.params['widthCathode']/2)
         # print(-argon_dim[2]/2, params['zLArBuffer'], self.params['lengthCathode']/2)
 
-        cathode_vol = self.get_volume()
+        cathode_vol_1 = self.get_volume('cathode_volume_nonTCO')
+        cathode_vol_2 = self.get_volume('cathode_volume_TCO')
         mesh_vol = self.mesh_vol
 
         # Get CRM dimensions from params 
@@ -226,13 +235,18 @@ class CathodeBuilder(gegede.builder.Builder):
                     y=module_y,
                     z=module_z
                 )
-                
-                place = geom.structure.Placement(
-                    f"{self.name}_place_{i}_{j}",
-                    volume=cathode_vol,
-                    pos=pos
-                )
-                
+                if (i==0):
+                    place = geom.structure.Placement(
+                        f"{self.name}_place_{i}_{j}",
+                        volume=cathode_vol_1,
+                        pos=pos
+                    )
+                else:
+                    place = geom.structure.Placement(
+                        f"{self.name}_place_{i}_{j}",
+                        volume=cathode_vol_2,
+                        pos=pos
+                    )
                 volume.placements.append(place.name)
 
                 # Place X-ARAPUCAs associated with this cathode module
