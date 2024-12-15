@@ -288,18 +288,27 @@ class CathodeBuilder(gegede.builder.Builder):
 
                 # Place mesh in each void position
                 for void_idx, (void_y, void_z) in enumerate(self.params['void_positions']):
-                    mesh_pos = geom.structure.Position(
-                        f"{self.name}_mesh_pos_{i}_{j}_{void_idx}",
-                        x=cathode_x,
-                        y=base_y + i*self.params['widthCathode'] + void_y - \
-                        self.params['mesh_width']/2 + self.params['CathodeMeshInnerStructureSeparation'],
-                        z=base_z + j*self.params['lengthCathode'] + void_z
-                    )
-                    
-                    mesh_place = geom.structure.Placement(
-                        f"{self.name}_mesh_place_{i}_{j}_{void_idx}",
-                        volume=mesh_vol,
-                        pos=mesh_pos
-                    )
-                    
-                    volume.placements.append(mesh_place.name)
+                    flag_construct = True
+
+                    # skip the mesh if there is a X-ARAPUCA in the same position
+                    for idx, (x, y, z) in enumerate(arapuca_positions):
+                        if (abs(base_y + i*self.params['widthCathode'] + void_y + self.params['CathodeMeshInnerStructureSeparation'] - y)<Q('10cm') and abs(base_z + j*self.params['lengthCathode'] + void_z - z)<Q('1cm')):
+                            flag_construct = False
+                            break
+
+                    if (flag_construct):
+                        mesh_pos = geom.structure.Position(
+                            f"{self.name}_mesh_pos_{i}_{j}_{void_idx}",
+                            x=cathode_x,
+                            y=base_y + i*self.params['widthCathode'] + void_y - \
+                            self.params['mesh_width']/2 + self.params['CathodeMeshInnerStructureSeparation'],
+                            z=base_z + j*self.params['lengthCathode'] + void_z
+                        )
+                        
+                        mesh_place = geom.structure.Placement(
+                            f"{self.name}_mesh_place_{i}_{j}_{void_idx}",
+                            volume=mesh_vol,
+                            pos=mesh_pos
+                        )
+                        
+                        volume.placements.append(mesh_place.name)
