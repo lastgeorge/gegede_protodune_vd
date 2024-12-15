@@ -41,6 +41,8 @@ class BeamElementsBuilder(gegede.builder.Builder):
         self.beam['DeltaXZ3'] = math.tan(BeamTheta3)*math.cos(BeamPhi3)
         self.beam['DeltaYZ3'] = math.tan(BeamTheta3)*math.sin(BeamPhi3)
 
+       
+
     def configure(self, steel_parameters=None, cryostat_parameters=None, 
                  beam_parameters=None, FoamPadding=None, 
                  print_config=False,  
@@ -188,7 +190,26 @@ class BeamElementsBuilder(gegede.builder.Builder):
             
             self._configured = True
 
+    def construct_rotations(self, geom):
+        """Define standard rotations used throughout the geometry"""
+        rotations = {
+        }
+        rotations['rBeamW3'] = geom.structure.Rotation(
+            'rBeamW3',
+            x='0deg', y=f'-{self.beam["BeamTheta3Deg"]}deg', z=f'{self.beam["BeamPhi3Deg"]}deg'
+        )
+        rotations['rBeamWRev3'] = geom.structure.Rotation(
+            'rBeamWRev3',
+            x='-45deg', y='5.4611410351968113deg', z='-84.563498378865177deg'
+        )
+        rotations['rBeamPlII3'] = geom.structure.Rotation(
+            'rBeamPlII3',
+            x='-45deg', y='5.4611410351968113deg', z='-84.563498378865177deg'
+        )
+        return rotations
+
     def construct(self, geom, print_construct=False):  # Add this line
         if print_construct:
             print('Construct Beam Elements <- ProtoDUNE-VD <- World')
+        self.construct_rotations(geom)
         # TODO: Add Beam Elements construction code

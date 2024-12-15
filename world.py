@@ -302,12 +302,122 @@ class WorldBuilder(gegede.builder.Builder):
                                     ("Hydrogen", 0.094),
                                     ("Iron", 0.089)))
 
+    def construct_rotations(self, geom):
+        """Define standard rotations used throughout the geometry"""
+        # First create base rotations
+        rotations = {
+            # Standard rotations about single axes
+            'rot90AboutY': geom.structure.Rotation(
+                'rot90AboutY',
+                x='0deg', y='90deg', z='0deg'
+            ),
+            'rPlus45AboutX': geom.structure.Rotation(
+                'rPlus45AboutX',
+                x='45deg', y='0deg', z='0deg'
+            ),
+            'rPlus90AboutX': geom.structure.Rotation(
+                'rPlus90AboutX',
+                x='90deg', y='0deg', z='0deg'
+            ),
+            'rPlus90AboutY': geom.structure.Rotation(
+                'rPlus90AboutY', 
+                x='90deg', y='90deg', z='0deg'
+            ),
+            'rMinus90AboutX': geom.structure.Rotation(
+                'rMinus90AboutX',
+                x='270deg', y='0deg', z='0deg'
+            ),
+            'rMinus90AboutY': geom.structure.Rotation(
+                'rMinus90AboutY',
+                x='0deg', y='270deg', z='0deg'
+            ),
+            'rPlus90AboutXPlus90AboutZ': geom.structure.Rotation(
+                'rPlus90AboutXPlus90AboutZ',
+                x='90deg', y='0deg', z='90deg'
+            ),
+            'rMinus90AboutYMinus90AboutX': geom.structure.Rotation(
+                'rMinus90AboutYMinus90AboutX',
+                x='270deg', y='270deg', z='0deg'
+            ),
+            
+            # 180 degree rotations
+            'rPlus180AboutX': geom.structure.Rotation(
+                'rPlus180AboutX',
+                x='180deg', y='0deg', z='0deg'
+            ),
+            'rPlus180AboutY': geom.structure.Rotation(
+                'rPlus180AboutY',
+                x='0deg', y='180deg', z='0deg'
+            ),
+            'rPlus180AboutXPlus180AboutY': geom.structure.Rotation(
+                'rPlus180AboutXPlus180AboutY',
+                x='180deg', y='180deg', z='0deg'
+            ),
+            
+            # Identity rotation
+            'rIdentity': geom.structure.Rotation(
+                'rIdentity',
+                x='0deg', y='0deg', z='0deg'
+            ),
+            
+            # Special rotations for different parts
+            'rot04': geom.structure.Rotation(
+                'rot04',
+                x='0deg', y='270deg', z='90deg'
+            ),
+            'rot07': geom.structure.Rotation(
+                'rot07',
+                x='0deg', y='90deg', z='90deg'
+            ),
+            'rot03': geom.structure.Rotation(
+                'rot03',
+                x='0deg', y='90deg', z='270deg'
+            ),
+            'rot08': geom.structure.Rotation(
+                'rot08',
+                x='0deg', y='270deg', z='270deg'
+            ),
+            'rot06': geom.structure.Rotation(
+                'rot06',
+                x='180deg', y='270deg', z='0deg'
+            ),
+            'rot05': geom.structure.Rotation(
+                'rot05',
+                x='180deg', y='90deg', z='0deg'
+            )
+            # and wire angle rotations (rUWireAboutX, rVWireAboutX)
+        }
+
+        # Add wire angle rotations if defined in TPC parameters
+        if hasattr(self, 'tpc') and 'wireAngle' in self.tpc:
+            # U wire rotation
+            rotations['rUWireAboutX'] = geom.structure.Rotation(
+                'rUWireAboutX',
+                x=str(self.tpc['wireAngle']['U']),
+                y='0deg',
+                z='0deg'
+            )
+            
+            # V wire rotation
+            rotations['rVWireAboutX'] = geom.structure.Rotation(
+                'rVWireAboutX',
+                x=str(self.tpc['wireAngle']['V']),
+                y='0deg',
+                z='0deg'
+            )
+            # print(rotations['rVWireAboutX'])
+
+        return rotations
+
     def construct(self, geom):
         if self.print_construct:
             print('Construct World')
         # Define materials first
         self.construct_materials(geom)
-        # ...existing code...
+        
+        # Define standard rotations and store in geometry
+        self.construct_rotations(geom)
+       
 
         # print("A", self.DetEncX, self.DetEncY, self.DetEncZ)    
 

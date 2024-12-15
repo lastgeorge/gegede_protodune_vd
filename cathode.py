@@ -237,12 +237,15 @@ class CathodeBuilder(gegede.builder.Builder):
 
                 # Place X-ARAPUCAs associated with this cathode module
                 if xarapuca_builder and arapuca_wall:
+                    # Get the predefined rotation from geometry object
+                    # rot = geom.structure.getRotation('rPlus90AboutXPlus90AboutZ')
+                    
                     # Calculate X-ARAPUCA positions relative to this cathode module
                     arapuca_positions = xarapuca_builder.calculate_cathode_positions(
                         module_x, module_y, module_z
                     )
                     
-                    # Place each X-ARAPUCA
+                    # Place each X-ARAPUCA with rotation
                     for idx, (x, y, z) in enumerate(arapuca_positions):
                         print (idx, x, y, z)
                         arapuca_pos = geom.structure.Position(
@@ -250,10 +253,12 @@ class CathodeBuilder(gegede.builder.Builder):
                             x=x, y=y, z=z
                         )
                         
+                        # Include rotation in placement
                         arapuca_place = geom.structure.Placement(
                             f"place_cathode_{i}_{j}_xarapuca_{idx}",
                             volume=arapuca_wall,
-                            pos=arapuca_pos
+                            pos=arapuca_pos,
+                            rot='rPlus90AboutXPlus90AboutZ'    # Add rotation here
                         )
                         
                         volume.placements.append(arapuca_place.name)
