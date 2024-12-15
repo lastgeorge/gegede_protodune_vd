@@ -106,35 +106,60 @@ class CryostatBuilder(gegede.builder.Builder):
                                     dz=self.cryo['Argon_z']/2.0)
 
         # Create gaseous argon volume
-        gas_ar_shape = geom.shapes.Box(self.name + '_gasAr_shape',
+        gas_ar_shape_full = geom.shapes.Box(self.name + '_gasAr_full_shape',
                                     dx=self.cryo['HeightGaseousAr']/2.0,
                                     dy=self.cryo['Argon_y']/2.0,
                                     dz=self.cryo['Argon_z']/2.0)
 
-        # Subtract X-ARAPUCA spaces from gaseous argon
-        arapuca_pos1 = [-0.5*self.cryo['HeightGaseousAr'] - self.cryo['Upper_xLArBuffer'] - 
-                        self.xarapuca['FirstFrameVertDist'] - self.tpc['ReadoutPlane'],
-                        -self.cathode['widthCathode'] - self.xarapuca['CathodeFrameToFC'] - 
-                        self.xarapuca['FCToArapucaSpaceLat'],
-                        -0.5*self.cryo['Argon_z'] + self.cryo['zLArBuffer'] + 
-                        0.5*self.cathode['lengthCathode']]
-                        
-        # gas_ar_sub1 = geom.shapes.Boolean(self.name + '_gasAr_sub1',
-        #                                 type='subtraction',
-        #                                 first=gas_ar_shape,
-        #                                 second=self.get_builder('xarapuca').get_volume().shape,
-        #                                 pos=arapuca_pos1)
+        # Get X-ARAPUCA builder and its volume
+        xarapuca_builder = self.get_builder('xarapuca')
+        arapuca_vol = xarapuca_builder.get_volume('volXARAPUCAWall')  
+        window_vol = xarapuca_builder.get_volume('volXARAPUCAWindow')
+        arapuca_shape = arapuca_vol.shape
 
-        # Second X-ARAPUCA subtraction with updated Y position
-        arapuca_pos2 = [arapuca_pos1[0],
-                        -arapuca_pos1[1],  # Flip Y position
-                        arapuca_pos1[2]]
-                        
-        # gas_ar_shape_final = geom.shapes.Boolean(self.name + '_gasAr_final',
-        #                                     type='subtraction',
-        #                                     first=gas_ar_sub1,
-        #                                     second=self.get_builder('xarapuca').get_volume().shape,
-        #                                     pos=arapuca_pos2)
+        # Calculate X-ARAPUCA subtraction positions from gas argon
+        # First X-ARAPUCA position
+        arapuca_pos1 = geom.structure.Position(
+            "gasAr_arapuca_pos1",
+            x = -0.5*self.cryo['HeightGaseousAr'] - 
+                self.cryo['Upper_xLArBuffer'] - 
+                self.xarapuca['FirstFrameVertDist'] - 
+                self.tpc['ReadoutPlane'],
+            y = -self.cathode['widthCathode'] - 
+                self.xarapuca['CathodeFrameToFC'] - 
+                self.xarapuca['FCToArapucaSpaceLat'],
+            z = -0.5*self.cryo['Argon_z'] + 
+                self.cryo['zLArBuffer'] + 
+                0.5*self.cathode['lengthCathode']
+        )
+
+        # Create first subtraction 
+        gas_ar_sub1 = geom.shapes.Boolean(
+            self.name + '_gasAr_sub1',
+            type='subtraction',
+            first=gas_ar_shape_full,
+            second=arapuca_shape,
+            pos=arapuca_pos1
+        )
+
+        # Second X-ARAPUCA position (mirrored in Y)
+        arapuca_pos2 = geom.structure.Position(
+            "gasAr_arapuca_pos2", 
+            x = arapuca_pos1.x,
+            y = self.cathode['widthCathode'] + 
+                self.xarapuca['CathodeFrameToFC'] + 
+                self.xarapuca['FCToArapucaSpaceLat'],
+            z = arapuca_pos1.z
+        )
+
+        # Create final gas argon shape with both subtractions
+        gas_ar_shape_final = geom.shapes.Boolean(
+            self.name + '_gasAr_final',
+            type='subtraction',
+            first=gas_ar_sub1,
+            second=arapuca_shape,
+            pos=arapuca_pos2
+        )
 
         # Create the steel shell by subtracting argon volume from cryostat
         steel_shape = geom.shapes.Boolean(self.name + '_steel_shape',
@@ -153,8 +178,7 @@ class CryostatBuilder(gegede.builder.Builder):
 
         gas_ar_vol = geom.structure.Volume(self.name + '_gasAr_volume',
                                         material='GAr',
-                                        # shape=gas_ar_shape_final)
-                                        shape=gas_ar_shape)
+                                         shape=gas_ar_shape_final)
 
         # Create the main cryostat volume
         cryo_vol = geom.structure.Volume(self.name + '_volume',
@@ -189,3 +213,23 @@ class CryostatBuilder(gegede.builder.Builder):
 
 
         self.add_volume(cryo_vol)
+
+    
+
+        # # Get positions for cathode-mounted X-ARAPUCAs
+        # cathode_positions = xarapuca_builder.calculate_cathode_positions(
+        #     self.cathode_center_x,
+        #     self.cathode_center_y, 
+        #     self.cathode_center_z
+        # )
+
+        # # Place cathode X-ARAPUCAs
+        # for i,pos in enumerate(cathode_positions):
+        #     # Create position
+        #     pos_name = f"pos_cathode_xarapuca_{i}"
+        #     geom_pos = geom.structure.Position(pos_name, x=pos[0], y=pos[1], z=pos[2])
+            
+        #     # Create placement
+        #     place_name = f"place_cathode_xarapuca_{i}"
+        #     place = geom.structure.Placement(place_name, volume=arapuca_vol, pos=pos_name)
+        #     self.vol.placements.append(place.name)
