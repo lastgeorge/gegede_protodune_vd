@@ -121,7 +121,6 @@ class CryostatBuilder(gegede.builder.Builder):
         # Get X-ARAPUCA builder and its volume
         xarapuca_builder = self.get_builder('xarapuca')
         arapuca_vol = xarapuca_builder.get_volume('volXARAPUCAWall')  
-        window_vol = xarapuca_builder.get_volume('volXARAPUCAWindow')
         arapuca_shape = arapuca_vol.shape
 
         # Calculate X-ARAPUCA subtraction positions from gas argon

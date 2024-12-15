@@ -118,11 +118,27 @@ class XARAPUCABuilder(gegede.builder.Builder):
                                          shape=window_shape)
         
         # Make the sensitive window volume by adding auxiliary info
-        window_vol.params.append(("SensDet","PhotonDetector"))
+        window_vol.params.extend([
+            ("SensDet", "PhotonDetector"),
+            ("Solid", "True"),
+            ("Efficiency", "1.0")
+        ])
+
+        # Create placement for window in wall
+        window_pos = geom.structure.Position("window_pos",
+                                        x=Q('0cm'),
+                                        y=self.params['ArapucaOut_y']/2.0 - 
+                                            self.params['ArapucaAcceptanceWindow_y']/2.0,
+                                        z=Q('0cm'))
+        
+        window_place = geom.structure.Placement("window_place",
+                                            volume=window_vol,
+                                            pos=window_pos)
+        
+        wall_vol.placements.append(window_place.name)
 
         # Add the volumes to the builder
         self.add_volume(wall_vol)
-        self.add_volume(window_vol)
 
     def calculate_cathode_positions(self, idx, cathode_center_x, cathode_center_y, cathode_center_z):
         '''Calculate positions of X-ARAPUCAs over the cathode'''

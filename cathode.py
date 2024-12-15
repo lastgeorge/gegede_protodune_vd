@@ -227,7 +227,6 @@ class CathodeBuilder(gegede.builder.Builder):
         arapuca_wall = None
         if xarapuca_builder:
             arapuca_wall = xarapuca_builder.get_volume('volXARAPUCAWall')
-            arapuca_window = xarapuca_builder.get_volume('volXARAPUCAWindow')
 
         # Place cathodes and meshes in 2x2 grid
         for i in range(n_crm_x//2):  # y direction
@@ -270,7 +269,7 @@ class CathodeBuilder(gegede.builder.Builder):
                     
                     # Place each X-ARAPUCA with rotation
                     for idx, (x, y, z) in enumerate(arapuca_positions):
-                        print (idx, x, y, z)
+                        # print (idx, x, y, z)
                         arapuca_pos = geom.structure.Position(
                             f"pos_cathode_{i}_{j}_xarapuca_{idx}",
                             x=x, y=y, z=z
