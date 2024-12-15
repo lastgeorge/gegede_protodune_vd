@@ -224,9 +224,11 @@ class CathodeBuilder(gegede.builder.Builder):
         n_crm_x = params.get('nCRM_x', 4)  # Default 4 if not specified
 
         # Get X-ARAPUCA volumes if builder is available
-        arapuca_wall = None
+        double_arapuca_wall = None
+        double_arapuca_window = None
         if xarapuca_builder:
-            arapuca_wall = xarapuca_builder.get_volume('volXARAPUCAWall')
+            double_arapuca_wall = xarapuca_builder.get_volume('volXARAPUCADoubleWall')
+            double_arapuca_window = xarapuca_builder.get_volume('volXARAPUCADoubleWindow')
 
         # Place cathodes and meshes in 2x2 grid
         for i in range(n_crm_x//2):  # y direction
@@ -258,9 +260,7 @@ class CathodeBuilder(gegede.builder.Builder):
                 volume.placements.append(place.name)
 
                 # Place X-ARAPUCAs associated with this cathode module
-                if xarapuca_builder and arapuca_wall:
-                    # Get the predefined rotation from geometry object
-                    # rot = geom.structure.getRotation('rPlus90AboutXPlus90AboutZ')
+                if xarapuca_builder and double_arapuca_wall:
                     
                     # Calculate X-ARAPUCA positions relative to this cathode module
                     arapuca_positions = xarapuca_builder.calculate_cathode_positions(i,
@@ -269,21 +269,31 @@ class CathodeBuilder(gegede.builder.Builder):
                     
                     # Place each X-ARAPUCA with rotation
                     for idx, (x, y, z) in enumerate(arapuca_positions):
-                        # print (idx, x, y, z)
-                        arapuca_pos = geom.structure.Position(
-                            f"pos_cathode_{i}_{j}_xarapuca_{idx}",
-                            x=x, y=y, z=z
-                        )
                         
+
                         # Include rotation in placement
                         arapuca_place = geom.structure.Placement(
                             f"place_cathode_{i}_{j}_xarapuca_{idx}",
-                            volume=arapuca_wall,
-                            pos=arapuca_pos,
+                            volume=double_arapuca_wall,
+                            pos= geom.structure.Position(
+                                f"pos_cathode_{i}_{j}_xarapuca_{idx}",
+                                x=x, y=y, z=z
+                            ),
                             rot='rPlus90AboutXPlus90AboutZ'    # Add rotation here
                         )
-                        
                         volume.placements.append(arapuca_place.name)
+
+                        # place the window
+                        window_place = geom.structure.Placement(
+                            f"place_cathode_{i}_{j}_xwindow_{idx}",
+                            volume=double_arapuca_window,
+                            pos=geom.structure.Position(
+                                f"pos_cathode_{i}_{j}_xwindow_{idx}",
+                                x=x, y=y, z=z
+                            ),
+                            rot='rPlus90AboutXPlus90AboutZ'    # Add rotation here
+                        )
+                        volume.placements.append(window_place.name)
 
                 # Place mesh in each void position
                 for void_idx, (void_y, void_z) in enumerate(self.params['void_positions']):

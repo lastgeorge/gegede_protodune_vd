@@ -77,68 +77,83 @@ class XARAPUCABuilder(gegede.builder.Builder):
         if self.print_construct:
             print('Construct XARAPUCA <- Cryostat <- ProtoDUNE-VD <- World')
     
-        # Create the main X-ARAPUCA shapes
+        # Regular ARAPUCA shapes
         out_box = geom.shapes.Box("XARAPUCA_out_shape",
                                 dx=self.params['ArapucaOut_x']/2.0,
                                 dy=self.params['ArapucaOut_y']/2.0,
                                 dz=self.params['ArapucaOut_z']/2.0)
 
         in_box = geom.shapes.Box("XARAPUCA_in_shape", 
-                               dx=self.params['ArapucaIn_x']/2.0,
-                               dy=self.params['ArapucaIn_y']/2.0,
-                               dz=self.params['ArapucaIn_z']/2.0)
+                            dx=self.params['ArapucaIn_x']/2.0,
+                            dy=self.params['ArapucaOut_y']/2.0,  # Note: Uses ArapucaOut_y
+                            dz=self.params['ArapucaIn_z']/2.0)
 
-        # Create subtraction for wall shape
-        xw_y = self.params['ArapucaOut_y'] / 2.0
-        xw_pos = geom.structure.Position(
-                self.name + "_xw_pos1",
-                x=Q('0cm'),
-                y=xw_y,
-                z=Q('0cm'))
-        
+        # Regular ARAPUCA walls - subtraction with offset
         wall_shape = geom.shapes.Boolean("XARAPUCA_wall_shape",
-                           type='subtraction',
-                           first=out_box,
-                           second=in_box,
-                           pos=xw_pos)
+                        type='subtraction',
+                        first=out_box,
+                        second=in_box,
+                        pos=geom.structure.Position(
+                            "posArapucaSub",
+                            x=Q('0cm'),
+                            y=self.params['ArapucaOut_y']/2.0,
+                            z=Q('0cm')))
 
-        # Create acceptance window shape 
+        # Regular acceptance window
         window_shape = geom.shapes.Box("XARAPUCA_window_shape",
-                                     dx=self.params['ArapucaAcceptanceWindow_x']/2.0,
-                                     dy=self.params['ArapucaAcceptanceWindow_y']/2.0,
-                                     dz=self.params['ArapucaAcceptanceWindow_z']/2.0)
+                                    dx=self.params['ArapucaAcceptanceWindow_x']/2.0,
+                                    dy=self.params['ArapucaAcceptanceWindow_y']/2.0,
+                                    dz=self.params['ArapucaAcceptanceWindow_z']/2.0)
+    
 
-        # Create the volumes
+
+        # Double ARAPUCA shapes
+        double_in_box = geom.shapes.Box("XARAPUCA_double_in_shape",
+                                    dx=self.params['ArapucaIn_x']/2.0,
+                                    dy=(self.params['ArapucaOut_y'] + Q('1.0cm'))/2.0,
+                                    dz=self.params['ArapucaIn_z']/2.0)
+
+        # Double ARAPUCA walls - centered subtraction
+        double_wall_shape = geom.shapes.Boolean("XARAPUCA_double_wall_shape",
+                                type='subtraction',
+                                first=out_box,
+                                second=double_in_box)
+
+        # Double acceptance window - different dimensions
+        double_window_shape = geom.shapes.Box("XARAPUCA_double_window_shape",
+                                            dx=self.params['ArapucaAcceptanceWindow_x']/2.0,
+                                            dy=(self.params['ArapucaOut_y'] - Q('0.02cm'))/2.0,
+                                            dz=self.params['ArapucaAcceptanceWindow_z']/2.0)
+
+       
+        # Create volumes
+        # Regular ARAPUCA
         wall_vol = geom.structure.Volume("volXARAPUCAWall",
-                                       material="G10",
-                                       shape=wall_shape)
+                                    material="G10",
+                                    shape=wall_shape)
 
         window_vol = geom.structure.Volume("volXARAPUCAWindow", 
-                                         material="LAr",
-                                         shape=window_shape)
-        
-        # Make the sensitive window volume by adding auxiliary info
-        window_vol.params.extend([
-            ("SensDet", "PhotonDetector"),
-            ("Solid", "True"),
-            ("Efficiency", "1.0")
-        ])
+                                        material="LAr",
+                                        shape=window_shape)
+        window_vol.params.append(("SensDet","PhotonDetector"))
 
-        # Create placement for window in wall
-        window_pos = geom.structure.Position("window_pos",
-                                        x=Q('0cm'),
-                                        y=self.params['ArapucaOut_y']/2.0 - 
-                                            self.params['ArapucaAcceptanceWindow_y']/2.0,
-                                        z=Q('0cm'))
-        
-        window_place = geom.structure.Placement("window_place",
-                                            volume=window_vol,
-                                            pos=window_pos)
-        
-        wall_vol.placements.append(window_place.name)
+        # Double ARAPUCA
+        double_wall_vol = geom.structure.Volume("volXARAPUCADoubleWall",
+                                            material="G10", 
+                                            shape=double_wall_shape)
 
-        # Add the volumes to the builder
+        double_window_vol = geom.structure.Volume("volXARAPUCADoubleWindow",
+                                                material="LAr",
+                                                shape=double_window_shape)
+        double_window_vol.params.append(("SensDet","PhotonDetector"))
+
+        # Add volumes to builder
         self.add_volume(wall_vol)
+        self.add_volume(window_vol)
+        self.add_volume(double_wall_vol)
+        self.add_volume(double_window_vol)
+        
+        
 
     def calculate_cathode_positions(self, idx, cathode_center_x, cathode_center_y, cathode_center_z):
         '''Calculate positions of X-ARAPUCAs over the cathode'''
