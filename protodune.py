@@ -47,8 +47,9 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                  pmt_parameters=None,  
                  DetEncX=None, DetEncY=None, DetEncZ=None, FoamPadding=None, 
                  OriginXSet=None, OriginYSet=None, OriginZSet=None,  
+                 cathode_switch=True, fieldcage_switch=True, arapucamesh_switch=True,  # Add these lines
                  print_config=False,  
-                 print_construct=False,  # Add this line
+                 print_construct=False,  
                  **kwds):
         
         if print_config:
@@ -83,6 +84,10 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         if pmt_parameters:  
             self.pmt = pmt_parameters
 
+        self.cathode_switch = cathode_switch  # Add this line
+        self.fieldcage_switch = fieldcage_switch  # Add this line
+        self.arapucamesh_switch = arapucamesh_switch  # Add this line
+
         self.print_construct = print_construct
         # Mark as configured
         self._configured = True
@@ -94,8 +99,8 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                     cryostat_parameters=self.cryo,
                     beam_parameters=beam_parameters,
                     FoamPadding=self.FoamPadding,
-                    print_config=print_config,  # Add this line
-                    print_construct=print_construct,  # Add this line
+                    print_config=print_config,  
+                    print_construct=print_construct,  
                     **kwds)
             if name == 'cryostat':
                 builder.configure(cryostat_parameters=self.cryo,
@@ -104,8 +109,11 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                       xarapuca_parameters=self.xarapuca,  
                       fieldcage_parameters=self.fieldcage,  
                       pmt_parameters=self.pmt,  
-                      print_config=print_config,  # Add this line
-                      print_construct=print_construct,  # Add this line
+                      cathode_switch=self.cathode_switch,  # Add this line
+                      fieldcage_switch=self.fieldcage_switch,  # Add this line
+                      arapucamesh_switch=self.arapucamesh_switch,  # Add this line
+                      print_config=print_config,  
+                      print_construct=print_construct,  
                       **kwds)
             if name == 'crt':
                 builder.configure(crt_parameters=crt_parameters,
@@ -113,18 +121,18 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                     OriginXSet=self.OriginXSet,  
                     OriginYSet=self.OriginYSet,
                     OriginZSet=self.OriginZSet,
-                    print_config=print_config,  # Add this line
-                    print_construct=print_construct,  # Add this line
+                    print_config=print_config,  
+                    print_construct=print_construct,  
                     **kwds)
             if name == 'steelsupport':
                 builder.configure(steel_parameters=self.steel,
-                    print_config=print_config,  # Add this line
-                    print_construct=print_construct,  # Add this line
+                    print_config=print_config,  
+                    print_construct=print_construct,  
                     **kwds)
             if name == 'foam':
                 builder.configure(FoamPadding=self.FoamPadding,
-                    print_config=print_config,  # Add this line
-                    print_construct=print_construct,  # Add this line
+                    print_config=print_config,  
+                    print_construct=print_construct,  
                     **kwds)
 
     def construct(self, geom):

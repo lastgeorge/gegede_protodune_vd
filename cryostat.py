@@ -35,8 +35,9 @@ class CryostatBuilder(gegede.builder.Builder):
     def configure(self, cryostat_parameters=None, tpc_parameters=None, 
                  cathode_parameters=None, xarapuca_parameters=None, 
                  fieldcage_parameters=None, pmt_parameters=None,  
+                 cathode_switch=True, fieldcage_switch=True, arapucamesh_switch=True,  # Add these lines
                  print_config=False,  
-                 print_construct=False,  # Add this line
+                 print_construct=False,  
                  **kwds):  
 
         if print_config:
@@ -52,9 +53,13 @@ class CryostatBuilder(gegede.builder.Builder):
             self.tpc = tpc_parameters
         if cathode_parameters:
             self.cathode = cathode_parameters
-        if xarapuca_parameters:  # Add this block
+        if xarapuca_parameters:  
             self.xarapuca = xarapuca_parameters
         
+        self.cathode_switch = cathode_switch  # Add this line
+        self.fieldcage_switch = fieldcage_switch  # Add this line
+        self.arapucamesh_switch = arapucamesh_switch  # Add this line
+
         self.print_construct = print_construct
         # Mark as configured
         self._configured = True
@@ -64,28 +69,28 @@ class CryostatBuilder(gegede.builder.Builder):
             if name == 'tpcs':
                 builder.configure(tpc_parameters=self.tpc,
                                   print_config=print_config,
-                                  print_construct=print_construct,  # Add this line
+                                  print_construct=print_construct,  
                                   **kwds)
             elif name == 'cathode':
                 builder.configure(tpc_params=self.tpc,
                                   cathode_parameters=self.cathode,
                                   print_config=print_config,
-                                  print_construct=print_construct,  # Add this line
+                                  print_construct=print_construct,  
                                   **kwds)
             elif name == 'xarapuca':
                 builder.configure(xarapuca_parameters=self.xarapuca,
                                   print_config=print_config,
-                                  print_construct=print_construct,  # Add this line
+                                  print_construct=print_construct,  
                                   **kwds)
             elif name == 'fieldcage':
                 builder.configure(fieldcage_parameters=fieldcage_parameters,
                                   print_config=print_config,
-                                  print_construct=print_construct,  # Add this line
+                                  print_construct=print_construct,  
                                   **kwds)
             elif name == 'pmts':
                 builder.configure(pmt_parameters=pmt_parameters,
                                   print_config=print_config,
-                                  print_construct=print_construct,  # Add this line
+                                  print_construct=print_construct,  
                                   **kwds)
 
     def construct(self, geom):
@@ -178,7 +183,7 @@ class CryostatBuilder(gegede.builder.Builder):
 
         gas_ar_vol = geom.structure.Volume(self.name + '_gasAr_volume',
                                         material='GAr',
-                                         shape=gas_ar_shape_final)
+                                        shape=gas_ar_shape_final)
 
         # Create the main cryostat volume
         cryo_vol = geom.structure.Volume(self.name + '_volume',
@@ -210,6 +215,24 @@ class CryostatBuilder(gegede.builder.Builder):
         cryo_vol.placements.append(steel_place.name)
         cryo_vol.placements.append(argon_place.name)
         argon_vol.placements.append(gas_ar_place.name)
+
+
+        if self.cathode_switch:
+            cathode_builder = self.get_builder('cathode')
+            if cathode_builder:
+                # Create dictionary of placement parameters
+                placement_params = {
+                    'HeightGaseousAr': self.cryo['HeightGaseousAr'],
+                    'Upper_xLArBuffer': self.cryo['Upper_xLArBuffer'],
+                    'driftTPCActive': self.tpc['driftTPCActive'],
+                    'ReadoutPlane': self.tpc['ReadoutPlane'],
+                    'yLArBuffer': self.cryo['yLArBuffer'],
+                    'zLArBuffer': self.cryo['zLArBuffer']
+                }
+                
+                # Call placement function
+                argon_dim = (self.cryo['Argon_x'], self.cryo['Argon_y'], self.cryo['Argon_z'])
+                cathode_builder.place_in_volume(geom, argon_vol, argon_dim, placement_params)
 
 
         self.add_volume(cryo_vol)

@@ -32,6 +32,27 @@ class CathodeBuilder(gegede.builder.Builder):
         # Store cathode params
         if cathode_parameters:
             self.params = cathode_parameters
+
+            # Calculate additional derived parameters
+            # Mesh parameters
+            self.params['mesh_length'] = self.params['lengthCathodeVoid'] 
+            self.params['mesh_width'] = self.params['widthCathodeVoid']
+
+            # Define void positions for 4x4 grid in a single cathode
+            self.params['void_positions'] = []
+            
+            # Calculate void positions
+            for i in range(4):  # rows
+                for j in range(4):  # columns
+                    # Calculate x position
+                    x = (i - 1.5) * self.params['widthCathodeVoid'] + \
+                        (i - 2) * self.params['CathodeBorder']
+                    
+                    # Calculate z position    
+                    z = (j - 1.5) * self.params['lengthCathodeVoid'] + \
+                        (j - 2) * self.params['CathodeBorder']
+                    
+                    self.params['void_positions'].append([x, z])
         
         # Store TPC params we need
         if tpc_params:
@@ -54,8 +75,160 @@ class CathodeBuilder(gegede.builder.Builder):
         self.print_construct = print_construct
 
     def construct(self, geom):
-        '''Construct the cathode geometry'''
+        '''Construct cathode geometry'''
         if self.print_construct:
             print('Construct Cathode <- Cryostat <- ProtoDUNE-VD <- World')
-        # TODO: Add cathode construction code
-        pass
+            
+        # Create base cathode box 
+        cathode_box = geom.shapes.Box(
+            self.name + "_box",
+            dx=self.params['heightCathode']/2,
+            dy=self.params['widthCathode']/2,     
+            dz=self.params['lengthCathode']/2) 
+
+        # Create void box for subtraction
+        void_box = geom.shapes.Box(
+            self.name + "_void",
+            dx=self.params['heightCathode']/2 + Q('0.5cm'),
+            dy=self.params['widthCathodeVoid']/2,
+            dz=self.params['lengthCathodeVoid']/2)
+
+        # Create cathode frame by subtracting all voids
+        shape = cathode_box
+        for i, (void_y, void_z) in enumerate(self.params['void_positions']):
+            shape = geom.shapes.Boolean(
+                self.name + f"_shape{i+1}",
+                type='subtraction',
+                first=shape,
+                second=void_box,
+                pos=geom.structure.Position(
+                    self.name + f"_void_pos{i+1}",
+                    x=Q('0cm'),
+                    y=void_y,
+                    z=void_z))
+
+        # Create main cathode volume with G10 material  
+        cathode_vol = geom.structure.Volume(
+            self.name+"_volume", 
+            material="G10",
+            shape=shape)
+
+        # Add main volume to builder
+        self.add_volume(cathode_vol)
+
+        # Create mesh rod shapes
+        mesh_rod_vertical = geom.shapes.Box(
+            self.name+"_mesh_rod_vertical",
+            dx=self.params['CathodeMeshInnerStructureThickness'],  # Thickness
+            dy=self.params['CathodeMeshInnerStructureWidth'],  # Width
+            dz=self.params['mesh_length']/2)  # Length
+
+        # Build complete mesh starting with first vertical rod
+        mesh_shape = mesh_rod_vertical
+            
+        # Add remaining vertical rods
+        for i in range(1, self.params['CathodeMeshInnerStructureNumberOfStrips_vertical']):
+            pos_y = i*self.params['CathodeMeshInnerStructureSeparation'] 
+            mesh_shape = geom.shapes.Boolean(
+                self.name + f"_mesh_v{i}",
+                type='union',
+                first=mesh_shape,
+                second=mesh_rod_vertical,
+                pos=geom.structure.Position(
+                    self.name + f"_vrod_pos{i}",
+                    x=Q('0cm'),
+                    y=pos_y,
+                    z=Q('0cm'))
+            )
+
+        # Create horizontal rod shape
+        mesh_rod_horizontal = geom.shapes.Box(
+            self.name+"_mesh_rod_horizontal", 
+            dx=self.params['CathodeMeshInnerStructureThickness'],  # Thickness
+            dy=self.params['mesh_width']/2,  # Width
+            dz=self.params['CathodeMeshInnerStructureWidth'])  # Height
+
+        # Add horizontal rods
+        for i in range(self.params['CathodeMeshInnerStructureNumberOfStrips_horizontal']):
+            pos_z = -self.params['mesh_length']/2 + (i+1)*self.params['CathodeMeshInnerStructureSeparation']
+            mesh_shape = geom.shapes.Boolean(
+                self.name + f"_mesh_h{i}",
+                type='union',
+                first=mesh_shape, 
+                second=mesh_rod_horizontal,
+                pos=geom.structure.Position(
+                    self.name + f"_hrod_pos{i}",
+                    x=Q('0cm'),
+                    y=self.params['mesh_width']/2-self.params['CathodeMeshInnerStructureSeparation'],
+                    z=pos_z
+                )
+            )
+
+        # Create volume for complete mesh
+        mesh_vol = geom.structure.Volume(
+            self.name+"_mesh_vol",
+            material="G10", 
+            shape=mesh_shape)
+
+        # Store mesh volume and add to builder
+        self.mesh_vol = mesh_vol
+        self.add_volume(mesh_vol)
+
+    def place_in_volume(self, geom, volume, argon_dim, params):
+        '''Place cathode modules in the given volume
+        
+        Args:
+            geom: Geometry object 
+            volume: Volume to place cathodes in
+            argon_dim: Tuple of LAr dimensions (x,y,z)
+            params: Dict containing placement parameters
+        '''
+        
+        # Calculate base position
+        cathode_x = argon_dim[0]/2 - params['HeightGaseousAr'] - \
+                    params['Upper_xLArBuffer'] - \
+                    (params['driftTPCActive'] + params['ReadoutPlane']) - \
+                    self.params['heightCathode']/2
+                    
+        base_y = -argon_dim[1]/2 + params['yLArBuffer'] + self.params['widthCathode']/2
+        base_z = -argon_dim[2]/2 + params['zLArBuffer'] + self.params['lengthCathode']/2
+        
+        cathode_vol = self.get_volume()
+        mesh_vol = self.mesh_vol
+
+        # Place cathodes and meshes in 2x2 grid
+        for i in range(2):  # y direction
+            for j in range(2):  # z direction
+                # Place cathode frame
+                pos = geom.structure.Position(
+                    f"{self.name}_pos_{i}_{j}",
+                    x=cathode_x,
+                    y=base_y + i*self.params['widthCathode'],
+                    z=base_z + j*self.params['lengthCathode']
+                )
+                
+                place = geom.structure.Placement(
+                    f"{self.name}_place_{i}_{j}",
+                    volume=cathode_vol,
+                    pos=pos
+                )
+                
+                volume.placements.append(place.name)
+
+                # Place mesh in each void position
+                for void_idx, (void_y, void_z) in enumerate(self.params['void_positions']):
+                    mesh_pos = geom.structure.Position(
+                        f"{self.name}_mesh_pos_{i}_{j}_{void_idx}",
+                        x=cathode_x,
+                        y=base_y + i*self.params['widthCathode'] + void_y - \
+                        self.params['mesh_width']/2 + self.params['CathodeMeshInnerStructureSeparation'],
+                        z=base_z + j*self.params['lengthCathode'] + void_z
+                    )
+                    
+                    mesh_place = geom.structure.Placement(
+                        f"{self.name}_mesh_place_{i}_{j}_{void_idx}",
+                        volume=mesh_vol,
+                        pos=mesh_pos
+                    )
+                    
+                    volume.placements.append(mesh_place.name)

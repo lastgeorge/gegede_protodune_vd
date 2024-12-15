@@ -38,6 +38,7 @@ class WorldBuilder(gegede.builder.Builder):
                  fieldcage_parameters=None,  
                  pmt_parameters=None,  
                  FoamPadding=None, AirThickness=None, DP_CRT_switch=None, 
+                 cathode_switch=True, fieldcage_switch=True, arapucamesh_switch=True,  # Add these lines
                  print_config=False,  
                  print_construct=False,  # Add this line
                  **kwds):
@@ -53,6 +54,9 @@ class WorldBuilder(gegede.builder.Builder):
         self.FoamPadding = FoamPadding
         self.AirThickness = AirThickness
         self.DP_CRT_switch = DP_CRT_switch
+        self.cathode_switch = cathode_switch  # Add this line
+        self.fieldcage_switch = fieldcage_switch  # Add this line
+        self.arapucamesh_switch = arapucamesh_switch  # Add this line
 
         # Process TPC parameters
         if tpc_parameters:
@@ -230,6 +234,9 @@ class WorldBuilder(gegede.builder.Builder):
                                   OriginXSet=self.OriginXSet,
                                   OriginYSet=self.OriginYSet,
                                   OriginZSet=self.OriginZSet,
+                                  cathode_switch=self.cathode_switch,  # Add this line
+                                  fieldcage_switch=self.fieldcage_switch,  # Add this line
+                                  arapucamesh_switch=self.arapucamesh_switch,  # Add this line
                                   print_config=print_config,
                                   print_construct=print_construct,  # Add this line
                                 **kwds)
