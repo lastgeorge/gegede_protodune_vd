@@ -55,6 +55,8 @@ class CryostatBuilder(gegede.builder.Builder):
             self.cathode = cathode_parameters
         if xarapuca_parameters:  
             self.xarapuca = xarapuca_parameters
+        if fieldcage_parameters:
+            self.fieldcage = fieldcage_parameters
         
         self.cathode_switch = cathode_switch  # Add this line
         self.fieldcage_switch = fieldcage_switch  # Add this line
@@ -258,5 +260,12 @@ class CryostatBuilder(gegede.builder.Builder):
                 frame_center_y, 
                 frame_center_z
             )
+
+        #print(self.fieldcage)
+
+        # Get the field cage volumes if field cage is enabled
+        if self.fieldcage_switch:
+            fc_builder = self.get_builder('fieldcage')
+            fc_builder.place_in_volume(geom, argon_vol, self.cryo['Cryostat_x']/2.)
 
         self.add_volume(cryo_vol)
