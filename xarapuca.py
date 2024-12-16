@@ -191,6 +191,23 @@ class XARAPUCABuilder(gegede.builder.Builder):
     def construct_membrane_mesh(self, geom):
         """Construct mesh for membrane X-ARAPUCAs following PERL implementation"""
         
+        # Create module box
+        module = geom.shapes.Box(
+            "ArapucaMeshModule",
+            dx=(self.params['MeshInnerStructureLength_horizontal'] + 
+            2*(self.params['MeshOuterRadius'] + self.params['MeshTorRad']))/2,
+            dy=(2*self.params['MeshRodOuterRadius'] + Q('1cm'))/2,
+            dz=(self.params['MeshInnerStructureLength_vertical'] + 
+            2*(self.params['MeshOuterRadius'] + self.params['MeshTorRad']))/2
+        )
+
+        # Create main mesh volume
+        mesh_vol = geom.structure.Volume(
+            "volArapucaMesh",
+            material="LAr",
+            shape=module
+        )
+
         # Create base shapes
         corner = geom.shapes.Torus(
             "ArapucaMeshCorner",
@@ -215,113 +232,113 @@ class XARAPUCABuilder(gegede.builder.Builder):
             dz=self.params['MeshTubeLength_horizontal']/2.
         )
 
-        # Create module box
-        module = geom.shapes.Box(
-            "ArapucaMeshModule",
-            dx=(self.params['MeshInnerStructureLength_horizontal'] + 
-            2*(self.params['MeshOuterRadius'] + self.params['MeshTorRad']))/2,
-            dy=(2*self.params['MeshRodOuterRadius'] + Q('1cm'))/2,
-            dz=(self.params['MeshInnerStructureLength_vertical'] + 
-            2*(self.params['MeshOuterRadius'] + self.params['MeshTorRad']))/2
+        mesh_params = [
+            {
+                "name": "union1",
+                "second": corner,
+                "pos": (-self.params['MeshTorRad'], Q('0cm'), self.params['MeshTubeLength_vertical']/2),
+                "rot": {'x': '90deg', 'y': '0deg', 'z': '0deg'}
+            },
+            {
+                "name": "union2", 
+                "second": tube_horiz,
+                "pos": (-(self.params['MeshTubeLength_horizontal']/2 + self.params['MeshTorRad']),
+                        Q('0cm'),
+                        self.params['MeshTubeLength_vertical']/2 + self.params['MeshTorRad']),
+                "rot": {'x': '0deg', 'y': '90deg', 'z': '0deg'}
+            },
+            {
+                "name": "union3",
+                "second": corner,
+                "pos": (-(self.params['MeshTubeLength_horizontal'] + self.params['MeshTorRad']),
+                        Q('0cm'),
+                        self.params['MeshTubeLength_vertical']/2),
+                "rot": {'x': '90deg', 'y': '270deg', 'z': '0deg'}
+            },
+            {
+                "name": "union4",
+                "second": tube_vert,
+                "pos": (-(self.params['MeshTubeLength_horizontal'] + 2*self.params['MeshTorRad']),
+                        Q('0cm'),
+                        Q('0cm')),
+                "rot": {'x': '0deg', 'y': '0deg', 'z': '0deg'}
+            },
+            {
+                "name": "union5",
+                "second": corner,
+                "pos": (-(self.params['MeshTubeLength_horizontal'] + self.params['MeshTorRad']),
+                        Q('0cm'),
+                        -self.params['MeshTubeLength_vertical']/2),
+                "rot": {'x': '90deg', 'y': '180deg', 'z': '0deg'}
+            },
+            {
+                "name": "union6",
+                "second": tube_horiz,
+                "pos": (-(self.params['MeshTubeLength_horizontal']/2 + self.params['MeshTorRad']),
+                        Q('0cm'),
+                        -(self.params['MeshTubeLength_vertical']/2 + self.params['MeshTorRad'])),
+                "rot": {'x': '0deg', 'y': '90deg', 'z': '0deg'}
+            },
+            {
+                "name": "union7",
+                "second": corner,
+                "pos": (-self.params['MeshTorRad'],
+                        Q('0cm'),
+                        -self.params['MeshTubeLength_vertical']/2),
+                "rot": {'x': '90deg', 'y': '90deg', 'z': '0deg'}
+            }
+        ]
+
+        # Build frame through loop
+        mesh_shape = tube_vert  # Start with vertical tube
+        for i, params in enumerate(mesh_params, 1):
+            pos = geom.structure.Position(
+                f"Mesh{params['name']}", 
+                x=params['pos'][0], 
+                y=params['pos'][1], 
+                z=params['pos'][2]
+            )
+            
+            rot = geom.structure.Rotation(
+                f"Meshrot{i}", 
+                x=params['rot']['x'], 
+                y=params['rot']['y'], 
+                z=params['rot']['z']
+            )
+            
+            mesh_shape = geom.shapes.Boolean(
+                f"Meshunion{i}",
+                type='union',
+                first=mesh_shape,
+                second=params['second'],
+                pos=pos,
+                rot=rot
+            )
+
+        mesh_final = mesh_shape  # Final result
+
+        # Add frame
+        mesh_frame = geom.structure.Volume(
+            "volMeshunion",
+            material="STEEL_STAINLESS_Fe7Cr2Ni",
+            shape=mesh_final
         )
 
-        # Build frame through successive unions
-        mesh1 = geom.shapes.Boolean(
-            "Meshunion1",
-            type='union',
-            first=tube_vert,
-            second=corner,
+        # Place frame in mesh volume
+        mesh_vol.placements.append(
+            geom.structure.Placement(
+            "meshframe_place",
+            volume=mesh_frame,
             pos=geom.structure.Position(
-            "Meshcorner1",
-            x=-self.params['MeshTorRad'],
-            y=Q('0cm'),
-            z=self.params['MeshTubeLength_vertical']/2
-            ),
-            rot='rPlus90AboutX'
-        )
-
-        mesh2 = geom.shapes.Boolean(
-            "Meshunion2", 
-            type='union',
-            first=mesh1,
-            second=tube_horiz,
-            pos=geom.structure.Position(
-            "Meshside2",
-            x=-(self.params['MeshTubeLength_horizontal']/2 + self.params['MeshTorRad']),
-            y=Q('0cm'),
-            z=self.params['MeshTubeLength_vertical']/2 + self.params['MeshTorRad']
-            ),
-            rot=geom.structure.Rotation("Meshrot2", x='0deg', y='90deg', z='0deg')
-        )
-
-        mesh3 = geom.shapes.Boolean(
-            "Meshunion3",
-            type='union',
-            first=mesh2,
-            second=corner,
-            pos=geom.structure.Position(
-            "Meshcorner2", 
-            x=-(self.params['MeshTubeLength_horizontal'] + self.params['MeshTorRad']),
-            y=Q('0cm'),
-            z=self.params['MeshTubeLength_vertical']/2
-            ),
-            rot=geom.structure.Rotation("Meshrot3", x='90deg', y='270deg', z='0deg')
-        )
-
-        mesh4 = geom.shapes.Boolean(
-            "Meshunion4",
-            type='union',
-            first=mesh3,
-            second=tube_vert,
-            pos=geom.structure.Position(
-            "Meshside3",
-            x=-(self.params['MeshTubeLength_horizontal'] + 2*self.params['MeshTorRad']),
+            "meshframe_pos",
+            x=self.params['MeshTubeLength_horizontal']/2 + self.params['MeshTorRad'],
             y=Q('0cm'),
             z=Q('0cm')
             )
+            ).name
         )
 
-        mesh5 = geom.shapes.Boolean(
-            "Meshunion5",
-            type='union', 
-            first=mesh4,
-            second=corner,
-            pos=geom.structure.Position(
-            "Meshcorner3",
-            x=-(self.params['MeshTubeLength_horizontal'] + self.params['MeshTorRad']),
-            y=Q('0cm'), 
-            z=-self.params['MeshTubeLength_vertical']/2
-            ),
-            rot=geom.structure.Rotation("Meshrot5", x='90deg', y='180deg', z='0deg')
-        )
 
-        mesh6 = geom.shapes.Boolean(
-            "Meshunion6",
-            type='union',
-            first=mesh5,
-            second=tube_horiz,
-            pos=geom.structure.Position(
-            "Meshside4", 
-            x=-(self.params['MeshTubeLength_horizontal']/2 + self.params['MeshTorRad']),
-            y=Q('0cm'),
-            z=-(self.params['MeshTubeLength_vertical']/2 + self.params['MeshTorRad'])
-            ),
-            rot=geom.structure.Rotation("Meshrot6", x='0deg', y='90deg', z='0deg')
-        )
-
-        mesh_final = geom.shapes.Boolean( 
-            "Meshunion7",
-            type='union',
-            first=mesh6,
-            second=corner,
-            pos=geom.structure.Position(
-            "Meshcorner4",
-            x=-self.params['MeshTorRad'],
-            y=Q('0cm'),
-            z=-self.params['MeshTubeLength_vertical']/2
-            ),
-            rot=geom.structure.Rotation("Meshrot7", x='90deg', y='90deg', z='0deg')
-        )
 
         # Create volumes for mesh parts and rods
         rod_vol_vert = geom.structure.Volume(
@@ -344,34 +361,6 @@ class XARAPUCABuilder(gegede.builder.Builder):
             rmax=self.params['MeshRodOuterRadius'],
             dz=self.params['MeshInnerStructureLength_horizontal']/2.
             )
-        )
-
-        # Create main mesh volume
-        mesh_vol = geom.structure.Volume(
-            "volArapucaMesh",
-            material="LAr",
-            shape=module
-        )
-
-        # Add frame
-        mesh_frame = geom.structure.Volume(
-            "volMeshunion",
-            material="STEEL_STAINLESS_Fe7Cr2Ni",
-            shape=mesh_final
-        )
-
-        # Place frame in mesh volume
-        mesh_vol.placements.append(
-            geom.structure.Placement(
-            "meshframe_place",
-            volume=mesh_frame,
-            pos=geom.structure.Position(
-            "meshframe_pos",
-            x=self.params['MeshTubeLength_horizontal']/2 + self.params['MeshTorRad'],
-            y=Q('0cm'),
-            z=Q('0cm')
-            )
-            ).name
         )
 
         # Add vertical rods
@@ -556,7 +545,73 @@ class XARAPUCABuilder(gegede.builder.Builder):
                 x += self.params['VerticalPDdist']
                 
             z = frame_center_z
-            
+
             positions.append((x,y,z))
             
         return positions
+
+    def place_lateral_xarapucas(self, geom, argon_vol, frame_center_x, frame_center_y, frame_center_z):
+        """Place lateral X-ARAPUCAs in the volume.
+        
+        Args:
+            geom: The geometry context
+            argon_vol: The volume to place X-ARAPUCAs in
+            frame_center_x: X coordinate of frame center
+            frame_center_y: Y coordinate of frame center 
+            frame_center_z: Z coordinate of frame center
+        """
+        # Get volumes
+        wall_vol = self.get_volume('volXARAPUCAWall')
+        window_vol = self.get_volume('volXARAPUCAWindow')
+        mesh_vol = self.get_volume('volArapucaMesh')
+
+        # Get positions
+        positions = self.calculate_lateral_positions(
+            frame_center_x, frame_center_y, frame_center_z
+        )
+
+        # Place ARAPUCAs and their meshes
+        for i, (x,y,z) in enumerate(positions):
+            # Place ARAPUCA wall
+            wall_place = geom.structure.Placement(
+                f"lateral_arapuca_wall_place_{i}",
+                volume=wall_vol,
+                pos=geom.structure.Position(
+                    f"lateral_arapuca_wall_pos_{i}", 
+                    x=x, y=y, z=z
+                ),
+                rot='rIdentity' if i<4 else 'rPlus180AboutX'
+            )
+            argon_vol.placements.append(wall_place.name)
+
+            # Place sensitive window 
+            y_sens = y + 0.5*self.params['ArapucaOut_y'] - \
+                    0.5*self.params['ArapucaAcceptanceWindow_y'] - Q('0.01cm') if i<4 else \
+                    y - 0.5*self.params['ArapucaOut_y'] + \
+                    0.5*self.params['ArapucaAcceptanceWindow_y'] + Q('0.01cm')
+            
+            window_place = geom.structure.Placement(
+                f"lateral_arapuca_window_place_{i}",
+                volume=window_vol, 
+                pos=geom.structure.Position(
+                    f"lateral_arapuca_window_pos_{i}",
+                    x=x, y=y_sens, z=z
+                )
+            )
+            argon_vol.placements.append(window_place.name)
+
+            # Place mesh if enabled
+            if hasattr(self, 'arapucamesh_switch') and self.arapucamesh_switch:
+                mesh_y = y + self.params['Distance_Mesh_Window'] if i<4 else \
+                        y - self.params['Distance_Mesh_Window']
+                        
+                mesh_place = geom.structure.Placement(
+                    f"lateral_arapuca_mesh_place_{i}",
+                    volume=mesh_vol,
+                    pos=geom.structure.Position(
+                        f"lateral_arapuca_mesh_pos_{i}",
+                        x=x, y=mesh_y, z=z
+                    ),
+                    rot='rot90AboutY' if i<4 else 'rot05'
+                )
+                argon_vol.placements.append(mesh_place.name)

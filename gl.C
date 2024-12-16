@@ -59,9 +59,9 @@ for (int i = 0; i < nDaughters; i++) {
     TGeoNode *node = argon->GetDaughter(i);
     TString name(node->GetName());
 
-    if (name.Contains("gasAr")) {
-        node->SetInvisible();  // Hide this node and its descendants
-    }
+    // if (name.Contains("gasAr")) {
+    //     node->SetInvisible();  // Hide this node and its descendants
+    // }
 
     if (name.Contains("volCathodeArapucaMesh")) {
         node->SetVisibility(kFALSE);  // Hide the parent node

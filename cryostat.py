@@ -218,21 +218,11 @@ class CryostatBuilder(gegede.builder.Builder):
         cryo_vol.placements.append(argon_place.name)
         argon_vol.placements.append(gas_ar_place.name)
 
+        xarapuca_builder = self.get_builder('xarapuca')
 
         if self.cathode_switch:
             cathode_builder = self.get_builder('cathode')
-            xarapuca_builder = self.get_builder('xarapuca')
-        
             if cathode_builder:
-                # # Configure cathode builder with xarapuca builder
-                # cathode_builder.configure(
-                #     cathode_parameters=self.cathode,
-                #     tpc_params=self.tpc,
-                #     xarapuca_builder=xarapuca_builder,
-                #     print_config=self.print_config,
-                #     print_construct=self.print_construct
-                # )
-                
                 # Create dictionary of placement parameters
                 placement_params = {
                     'HeightGaseousAr': self.cryo['HeightGaseousAr'],
@@ -248,5 +238,25 @@ class CryostatBuilder(gegede.builder.Builder):
                 # Call placement function
                 argon_dim = (self.cryo['Argon_x'], self.cryo['Argon_y'], self.cryo['Argon_z'])
                 cathode_builder.place_in_volume(geom, argon_vol, argon_dim, placement_params, xarapuca_builder)
+
+        # Place lateral X-ARAPUCAs
+        if xarapuca_builder:
+            frame_center_x = (self.cryo['Argon_x']/2 - self.cryo['HeightGaseousAr'] - 
+                            self.cryo['Upper_xLArBuffer'] - 
+                            (self.tpc['driftTPCActive'] + self.tpc['ReadoutPlane']))
+            frame_center_y = (-self.cathode['widthCathode'] - self.xarapuca['CathodeFrameToFC'] -   self.xarapuca['FCToArapucaSpaceLat'] + self.xarapuca['ArapucaOut_y']/2)
+            frame_center_z = (-0.5*self.cryo['Argon_z'] + self.cryo['zLArBuffer'] + 0.5*self.cathode['lengthCathode'])
+            
+            # Pass arapucamesh_switch to builder
+            xarapuca_builder.arapucamesh_switch = self.arapucamesh_switch
+            
+            # Call placement function
+            xarapuca_builder.place_lateral_xarapucas(
+                geom, 
+                argon_vol,
+                frame_center_x,
+                frame_center_y, 
+                frame_center_z
+            )
 
         self.add_volume(cryo_vol)
