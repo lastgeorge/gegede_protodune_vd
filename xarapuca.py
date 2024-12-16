@@ -188,70 +188,229 @@ class XARAPUCABuilder(gegede.builder.Builder):
         self.add_volume(mesh_vol)
         return mesh_vol
 
-
-        # # Create vertical rod shape
-        # vert_rod = geom.shapes.Tubs(
-        #     f"{self.name}_cathode_xarapuca_vert_rod",  # Make name unique
-        #     rmin = Q('0cm'),
-        #     rmax=self.params['CathodeArapucaMeshRodRadius'],
-        #     dz=self.params['MeshTubeLength_vertical']/2.
-        # )
+    def construct_membrane_mesh(self, geom):
+        """Construct mesh for membrane X-ARAPUCAs following PERL implementation"""
         
-        # # Create horizontal rod shape  
-        # horiz_rod = geom.shapes.Tubs(
-        #     f"{self.name}_cathode_xarapuca_horiz_rod",  # Make name unique
-        #     rmin = Q('0cm'),
-        #     rmax=self.params['CathodeArapucaMeshRodRadius'],
-        #     dz=self.params['MeshTubeLength_horizontal']/2.
-        # )
+        # Create base shapes
+        corner = geom.shapes.Torus(
+            "ArapucaMeshCorner",
+            rmin=Q('0cm'), 
+            rmax=self.params['MeshOuterRadius'],
+            rtor=self.params['MeshTorRad'],
+            startphi=Q('0deg'),
+            deltaphi=Q('90deg')
+        )
 
-        # # Build mesh starting with first vertical rod
-        # mesh_shape = vert_rod
-        
-        # # Add remaining vertical rods
-        # for i in range(1, self.params['CathodeArapucaMeshNumberOfBars_vertical']):
-        #     pos_y = i * self.params['CathodeArapucaMeshRodSeparation'] #+ self.params['CathodeArapucaMesh_verticalOffset']
-        #     mesh_shape = geom.shapes.Boolean(
-        #         f"{self.name}_cathode_mesh_v{i}",  # Make name unique
-        #         type='union',
-        #         first=mesh_shape,
-        #         second=vert_rod,
-        #         pos=geom.structure.Position(
-        #             f"{self.name}_cathode_vrod_pos{i}",  # Make name unique
-        #             x=Q('0cm'),
-        #             y=pos_y, 
-        #             z=Q('0cm')
-        #         )
-        #     )
+        tube_vert = geom.shapes.Tubs(
+            "ArapucaMeshtube_vertical",
+            rmin=Q('0cm'),
+            rmax=self.params['MeshOuterRadius'],
+            dz=self.params['MeshTubeLength_vertical']/2.
+        )
 
-        # # Add horizontal rods
-        # for i in range(self.params['CathodeArapucaMeshNumberOfBars_horizontal']):
-        #     pos_z = i * self.params['CathodeArapucaMeshRodSeparation']  - self.cathode['lengthCathodeVoid']/2. #+ self.params['CathodeArapucaMesh_horizontalOffset']
-        #     mesh_shape = geom.shapes.Boolean(
-        #         f"{self.name}_cathode_mesh_h{i}",  # Make name unique
-        #         type='union',
-        #         first=mesh_shape,
-        #         second=horiz_rod,
-        #         pos=geom.structure.Position(
-        #             f"{self.name}_cathode_hrod_pos{i}",  # Make name unique
-        #             x=Q('0cm'),
-        #             y=self.cathode['widthCathodeVoid']/2. - self.params['CathodeArapucaMeshRodSeparation'],
-        #             z=pos_z,
-        #         ),
-        #         rot='rPlus90AboutX'
-        #     )
+        tube_horiz = geom.shapes.Tubs(
+            "ArapucaMeshtube_horizontal", 
+            rmin=Q('0cm'),
+            rmax=self.params['MeshOuterRadius'],
+            dz=self.params['MeshTubeLength_horizontal']/2.
+        )
 
-        # # Create volume for complete mesh
-        # mesh_vol = geom.structure.Volume(
-        #     f"{self.name}_volCathodeXarapucaMesh",  # Make name unique
-        #     material="STEEL_STAINLESS_Fe7Cr2Ni",
-        #     shape=mesh_shape
-        # )
-        
-        # # print(f"Adding volume {mesh_vol.name} to builder")
+        # Create module box
+        module = geom.shapes.Box(
+            "ArapucaMeshModule",
+            dx=(self.params['MeshInnerStructureLength_horizontal'] + 
+            2*(self.params['MeshOuterRadius'] + self.params['MeshTorRad']))/2,
+            dy=(2*self.params['MeshRodOuterRadius'] + Q('1cm'))/2,
+            dz=(self.params['MeshInnerStructureLength_vertical'] + 
+            2*(self.params['MeshOuterRadius'] + self.params['MeshTorRad']))/2
+        )
+
+        # Build frame through successive unions
+        mesh1 = geom.shapes.Boolean(
+            "Meshunion1",
+            type='union',
+            first=tube_vert,
+            second=corner,
+            pos=geom.structure.Position(
+            "Meshcorner1",
+            x=-self.params['MeshTorRad'],
+            y=Q('0cm'),
+            z=self.params['MeshTubeLength_vertical']/2
+            ),
+            rot='rPlus90AboutX'
+        )
+
+        mesh2 = geom.shapes.Boolean(
+            "Meshunion2", 
+            type='union',
+            first=mesh1,
+            second=tube_horiz,
+            pos=geom.structure.Position(
+            "Meshside2",
+            x=-(self.params['MeshTubeLength_horizontal']/2 + self.params['MeshTorRad']),
+            y=Q('0cm'),
+            z=self.params['MeshTubeLength_vertical']/2 + self.params['MeshTorRad']
+            ),
+            rot=geom.structure.Rotation("Meshrot2", x='0deg', y='90deg', z='0deg')
+        )
+
+        mesh3 = geom.shapes.Boolean(
+            "Meshunion3",
+            type='union',
+            first=mesh2,
+            second=corner,
+            pos=geom.structure.Position(
+            "Meshcorner2", 
+            x=-(self.params['MeshTubeLength_horizontal'] + self.params['MeshTorRad']),
+            y=Q('0cm'),
+            z=self.params['MeshTubeLength_vertical']/2
+            ),
+            rot=geom.structure.Rotation("Meshrot3", x='90deg', y='270deg', z='0deg')
+        )
+
+        mesh4 = geom.shapes.Boolean(
+            "Meshunion4",
+            type='union',
+            first=mesh3,
+            second=tube_vert,
+            pos=geom.structure.Position(
+            "Meshside3",
+            x=-(self.params['MeshTubeLength_horizontal'] + 2*self.params['MeshTorRad']),
+            y=Q('0cm'),
+            z=Q('0cm')
+            )
+        )
+
+        mesh5 = geom.shapes.Boolean(
+            "Meshunion5",
+            type='union', 
+            first=mesh4,
+            second=corner,
+            pos=geom.structure.Position(
+            "Meshcorner3",
+            x=-(self.params['MeshTubeLength_horizontal'] + self.params['MeshTorRad']),
+            y=Q('0cm'), 
+            z=-self.params['MeshTubeLength_vertical']/2
+            ),
+            rot=geom.structure.Rotation("Meshrot5", x='90deg', y='180deg', z='0deg')
+        )
+
+        mesh6 = geom.shapes.Boolean(
+            "Meshunion6",
+            type='union',
+            first=mesh5,
+            second=tube_horiz,
+            pos=geom.structure.Position(
+            "Meshside4", 
+            x=-(self.params['MeshTubeLength_horizontal']/2 + self.params['MeshTorRad']),
+            y=Q('0cm'),
+            z=-(self.params['MeshTubeLength_vertical']/2 + self.params['MeshTorRad'])
+            ),
+            rot=geom.structure.Rotation("Meshrot6", x='0deg', y='90deg', z='0deg')
+        )
+
+        mesh_final = geom.shapes.Boolean( 
+            "Meshunion7",
+            type='union',
+            first=mesh6,
+            second=corner,
+            pos=geom.structure.Position(
+            "Meshcorner4",
+            x=-self.params['MeshTorRad'],
+            y=Q('0cm'),
+            z=-self.params['MeshTubeLength_vertical']/2
+            ),
+            rot=geom.structure.Rotation("Meshrot7", x='90deg', y='90deg', z='0deg')
+        )
+
+        # Create volumes for mesh parts and rods
+        rod_vol_vert = geom.structure.Volume(
+            "volArapucaMeshRod_vertical",
+            material="STEEL_STAINLESS_Fe7Cr2Ni",
+            shape=geom.shapes.Tubs(
+            "ArapucaMeshRod_vertical",
+            rmin=Q('0cm'),
+            rmax=self.params['MeshRodOuterRadius'],
+            dz=self.params['MeshInnerStructureLength_vertical']/2.
+            )
+        )
+
+        rod_vol_horiz = geom.structure.Volume( 
+            "volArapucaMeshRod_horizontal",
+            material="STEEL_STAINLESS_Fe7Cr2Ni",
+            shape=geom.shapes.Tubs(
+            "ArapucaMeshRod_horizontal",
+            rmin=Q('0cm'),
+            rmax=self.params['MeshRodOuterRadius'],
+            dz=self.params['MeshInnerStructureLength_horizontal']/2.
+            )
+        )
+
+        # Create main mesh volume
+        mesh_vol = geom.structure.Volume(
+            "volArapucaMesh",
+            material="LAr",
+            shape=module
+        )
+
+        # Add frame
+        mesh_frame = geom.structure.Volume(
+            "volMeshunion",
+            material="STEEL_STAINLESS_Fe7Cr2Ni",
+            shape=mesh_final
+        )
+
+        # Place frame in mesh volume
+        mesh_vol.placements.append(
+            geom.structure.Placement(
+            "meshframe_place",
+            volume=mesh_frame,
+            pos=geom.structure.Position(
+            "meshframe_pos",
+            x=self.params['MeshTubeLength_horizontal']/2 + self.params['MeshTorRad'],
+            y=Q('0cm'),
+            z=Q('0cm')
+            )
+            ).name
+        )
+
+        # Add vertical rods
+        for i in range(self.params['MeshInnerStructureNumberOfBars_vertical']):
+            mesh_vol.placements.append(
+            geom.structure.Placement(
+            f"meshrod_v_{i}_place",
+            volume=rod_vol_vert,
+            pos=geom.structure.Position(
+            f"meshrod_v_{i}_pos",
+            x=-5*self.params['MeshInnerStructureSeparation'] + 
+            i*self.params['MeshInnerStructureSeparation'],
+            y=Q('0.00001cm') + 2*self.params['MeshRodOuterRadius'],
+            z=Q('0cm')
+            )
+            ).name
+            )
+
+        # Add horizontal rods
+        for i in range(self.params['MeshInnerStructureNumberOfBars_horizontal']):
+            mesh_vol.placements.append(
+            geom.structure.Placement(
+            f"meshrod_h_{i}_place", 
+            volume=rod_vol_horiz,
+            pos=geom.structure.Position(
+            f"meshrod_h_{i}_pos",
+            x=Q('0cm'),
+            y=Q('0cm'),
+            z=-4*self.params['MeshInnerStructureSeparation'] + 
+            i*self.params['MeshInnerStructureSeparation']
+            ),
+            rot='rot90AboutY'
+            ).name
+            )
 
         self.add_volume(mesh_vol)
         return mesh_vol
+
+
 
 
     def construct(self, geom):
@@ -340,6 +499,7 @@ class XARAPUCABuilder(gegede.builder.Builder):
         self.add_volume(double_window_vol)
 
         self.construct_cathode_mesh(geom)
+        self.construct_membrane_mesh(geom)
         
 
     def calculate_cathode_positions(self, idx, cathode_center_x, cathode_center_y, cathode_center_z):
