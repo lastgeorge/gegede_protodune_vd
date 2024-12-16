@@ -268,4 +268,8 @@ class CryostatBuilder(gegede.builder.Builder):
             fc_builder = self.get_builder('fieldcage')
             fc_builder.place_in_volume(geom, argon_vol, self.cryo['Cryostat_x']/2.)
 
+        # Add PMTs
+        pmt_builder = self.get_builder('pmts')
+        pmt_builder.place_pmts(geom, argon_vol)
+
         self.add_volume(cryo_vol)

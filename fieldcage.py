@@ -488,7 +488,7 @@ class FieldCageBuilder(gegede.builder.Builder):
         fc_vol = self.get_volume('volFieldShaper')
         # fc_slim_vol = self.get_volume('volFieldShaperSlim')
         
-        print(self.n_shapers)
+        # print(self.n_shapers)
 
         # Place field cage shapers
         for i in range(self.n_shapers):
