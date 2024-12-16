@@ -39,9 +39,9 @@ class PMTBuilder(gegede.builder.Builder):
         # Helper to make position dictionary
         def make_pos(x=None, y=None, z=None):
             pos = {}
-            if x is not None: pos['x'] = Q(f"{x}cm")
-            if y is not None: pos['y'] = Q(f"{y}cm") 
-            if z is not None: pos['z'] = Q(f"{z}cm")
+            pos['x'] = x if x is not None else Q('0cm')
+            pos['y'] = y if y is not None else Q('0cm') 
+            pos['z'] = z if z is not None else Q('0cm')
             return pos
 
         y = self.params['pmt_y_positions']
@@ -59,15 +59,8 @@ class PMTBuilder(gegede.builder.Builder):
             make_pos(y=y[1], z=z[0]),      # pos8 - y=170.0, z=306.0
             make_pos(y=y[2], z=z[0]),      # pos9 - y=0, z=306.0
             make_pos(y=y[3], z=z[0]),      # pos10 - y=-170.0, z=306.0
-            make_pos(y=y[1], z=z[2]),      # pos15 - y=170.0, z=-204.0
-            make_pos(y=y[2], z=z[2]),      # pos16 - y=0, z=-204.0
-            make_pos(y=y[3], z=z[2]),      # pos17 - y=-170.0, z=-204.0
-            make_pos(y=y[1], z=z[3]),      # pos18 - y=170.0, z=-306.0
-            make_pos(y=y[2], z=z[3]),      # pos19 - y=0, z=-306.0
-            make_pos(y=y[3], z=z[3]),      # pos20 - y=-170.0, z=-306.0
         ])
-
-        # Horizontal PMTs 
+         # Horizontal PMTs 
         htop = self.params['horizontal_pmt_pos_top']
         hbot = self.params['horizontal_pmt_pos_bot']
         hz = self.params['horizontal_pmt_z']
@@ -78,6 +71,15 @@ class PMTBuilder(gegede.builder.Builder):
             make_pos(x=hbot, y=hy, z=hz),        # pos12 - x=-301.7, y=221.0, z=228.9
             make_pos(x=htop, y=-hy, z=hz),       # pos13 - x=-225.9, y=-221.0, z=228.9  
             make_pos(x=hbot, y=-hy, z=hz),       # pos14 - x=-301.7, y=-221.0, z=228.9
+            make_pos(y=y[1], z=z[2]),      # pos15 - y=170.0, z=-204.0
+            make_pos(y=y[2], z=z[2]),      # pos16 - y=0, z=-204.0
+            make_pos(y=y[3], z=z[2]),      # pos17 - y=-170.0, z=-204.0
+            make_pos(y=y[1], z=z[3]),      # pos18 - y=170.0, z=-306.0
+            make_pos(y=y[2], z=z[3]),      # pos19 - y=0, z=-306.0
+            make_pos(y=y[3], z=z[3]),      # pos20 - y=-170.0, z=-306.0
+        ])
+
+        self.pmt_positions.extend([
             make_pos(x=htop, y=hy, z=-hz),       # pos21 - x=-225.9, y=221.0, z=-228.9
             make_pos(x=hbot, y=hy, z=-hz),       # pos22 - x=-301.7, y=221.0, z=-228.9
             make_pos(x=htop, y=-hy, z=-hz),      # pos23 - x=-225.9, y=-221.0, z=-228.9
@@ -228,25 +230,13 @@ class PMTBuilder(gegede.builder.Builder):
         # Add volumes to builder
         self.add_volume(pmt_coated_vol)
         self.add_volume(pmt_foil_vol)
-
-    def get_pmt_position(self, idx):
-        '''Helper to get position for PMT index'''
-        
-        # Get y,z positions from parameters
-        y = self.params['pmt_y_positions'][idx] * Q('1cm')
-        z = self.params['pmt_z_positions'][idx] * Q('1cm')
-        
-        return {'x': Q('0cm'), 'y': y, 'z': z}
     
 
     def place_pmts(self, geom, cryo_vol):
         '''Place PMTs in cryostat volume'''
         
-        # X position for PMTs
-        pmt_pos_x = Q('-367.6cm')  # Distance from membrane floor
-        
         # Loop through all PMT positions
-        for i in range(len(self.params['pmt_y_positions'])):
+        for i in range(len(self.pmt_positions)):
             k = i + 1
             
             # Determine rotation based on PMT location
@@ -257,22 +247,27 @@ class PMTBuilder(gegede.builder.Builder):
             else:
                 rot = 'rMinus90AboutY'
 
+
             # Determine PMT type (coated vs foil)
             pmt_type = 'volPMT_coated' if k in self.params['pmt_TPB'] else 'volPMT_foil'
             pmt_vol = self.get_volume(pmt_type)
 
             # Get PMT position
             if k in self.params['pmt_left_rotated'] or k in self.params['pmt_right_rotated']:
-                pos = geom.structure.Position(f"posPMT{i}", **self.get_pmt_position(i))
+                pos = geom.structure.Position(f"posPMT{i}", **self.pmt_positions[i])
             else:
-                pos_dict = self.get_pmt_position(i)
-                pos_dict['x'] = pmt_pos_x
+                pos_dict = self.pmt_positions[i]
+                pos_dict['x'] = self.params['pmt_pos_x']
                 pos = geom.structure.Position(f"posPMT{i}", **pos_dict)
 
+                
             # Create and add placement
             place = geom.structure.Placement(f"placePMT{i}",
-                volume=pmt_vol, 
-                pos=pos,
-                rot=rot)
+            volume=pmt_vol, 
+            pos=pos,
+            rot=rot)
+            
+
+            
             
             cryo_vol.placements.append(place.name)
