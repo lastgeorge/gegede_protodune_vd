@@ -13,12 +13,15 @@ class CathodeBuilder(gegede.builder.Builder):
         super(CathodeBuilder, self).__init__(name)
         self.params = None
 
-    def configure(self, cathode_parameters=None, tpc_params=None,  print_config=False, print_construct=False, **kwargs):
+    def configure(self, cathode_parameters=None, tpc_params=None, 
+                 arapucamesh_switch=True,  # Add this line
+                 print_config=False, print_construct=False, **kwargs):
         """Configure the cathode geometry.
         
         Args:
             cathode_parameters (dict): Cathode parameters from config
             tpc_params (dict): TPC parameters from parent builder
+            arapucamesh_switch (bool): Switch to enable/disable X-ARAPUCA mesh placement
             print_config (bool): Whether to print configuration info
             print_construct (bool): Whether to print construction info
             **kwargs: Additional configuration parameters
@@ -79,6 +82,9 @@ class CathodeBuilder(gegede.builder.Builder):
         if kwargs:
             self.params.update(kwargs)
             
+        # Store parameters
+        self.arapucamesh_switch = arapucamesh_switch  # Add this line
+
         # Mark as configured
         # self._configured = True
         self.print_construct = print_construct
@@ -226,9 +232,11 @@ class CathodeBuilder(gegede.builder.Builder):
         # Get X-ARAPUCA volumes if builder is available
         double_arapuca_wall = None
         double_arapuca_window = None
+        double_arapuca_mesh = None
         if xarapuca_builder:
             double_arapuca_wall = xarapuca_builder.get_volume('volXARAPUCADoubleWall')
             double_arapuca_window = xarapuca_builder.get_volume('volXARAPUCADoubleWindow')
+            double_arapuca_mesh = xarapuca_builder.get_volume('volCathodeArapucaMesh')
 
         # Place cathodes and meshes in 2x2 grid
         for i in range(n_crm_x//2):  # y direction
@@ -267,7 +275,7 @@ class CathodeBuilder(gegede.builder.Builder):
                         module_x, module_y, module_z
                     )
                     
-                    # Place each X-ARAPUCA with rotation
+                    # # Place each X-ARAPUCA with rotation
                     for idx, (x, y, z) in enumerate(arapuca_positions):
                         
 
@@ -295,6 +303,8 @@ class CathodeBuilder(gegede.builder.Builder):
                         )
                         volume.placements.append(window_place.name)
 
+                        
+
                 # Place mesh in each void position
                 for void_idx, (void_y, void_z) in enumerate(self.params['void_positions']):
                     flag_construct = True
@@ -321,3 +331,31 @@ class CathodeBuilder(gegede.builder.Builder):
                         )
                         
                         volume.placements.append(mesh_place.name)
+                    else:
+                        # Only place X-ARAPUCA mesh if switch is enabled
+                        # print(self.arapucamesh_switch)
+                        if self.arapucamesh_switch:
+                            # add cathode xarapuca mesh ...  double_arapuca_mesh
+                            mesh_top_place = geom.structure.Placement(
+                                f"place_cathode_{i}_{j}_top_xmesh_{idx}",
+                                volume=double_arapuca_mesh,
+                                pos = geom.structure.Position(
+                                    f"cathode_mesh_top_{i}_{j}_{idx}",
+                                    x=cathode_x + self.params['heightCathode']/2,
+                                    y=base_y + i*self.params['widthCathode'] + void_y,
+                                    z=base_z + j*self.params['lengthCathode'] + void_z
+                                )
+                            )
+                            volume.placements.append(mesh_top_place.name)
+
+                            mesh_bottom_place = geom.structure.Placement(
+                                f"place_cathode_{i}_{j}_bottom_xmesh_{idx}",
+                                volume=double_arapuca_mesh,
+                                pos = geom.structure.Position(
+                                    f"cathode_mesh_bottom_{i}_{j}_{idx}",
+                                    x=cathode_x - self.params['heightCathode']/2,
+                                    y=base_y + i*self.params['widthCathode'] + void_y,
+                                    z=base_z + j*self.params['lengthCathode'] + void_z
+                                )
+                            )
+                            volume.placements.append(mesh_bottom_place.name)

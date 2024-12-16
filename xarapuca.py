@@ -70,7 +70,189 @@ class XARAPUCABuilder(gegede.builder.Builder):
             self.list_posx_bot.append(-self.list_posx_bot[0])
             self.list_posz_bot.append(-self.list_posz_bot[0])
 
+        if self.params:
+            # Calculate derived mesh parameters
+            self.params['MeshInnerStructureSeparation'] = (
+                self.params['MeshInnerStructureSeparation_base'] + 
+                self.params['MeshRodOuterRadius']
+            )
+            
+            # Calculate number of mesh bars for cathode X-ARAPUCA
+            if self.cathode:
+                self.params['CathodeArapucaMeshNumberOfBars_vertical'] = int(
+                    self.cathode['lengthCathodeVoid'] / 
+                    self.params['CathodeArapucaMeshRodSeparation']
+                )
+                self.params['CathodeArapucaMeshNumberOfBars_horizontal'] = int(
+                    self.cathode['widthCathodeVoid'] / 
+                    self.params['CathodeArapucaMeshRodSeparation']
+                )
+
+            # Calculate distance between mesh and window
+            self.params['Distance_Mesh_Window'] = Q('1.8cm') + self.params['MeshOuterRadius']
+
         self._configured = True
+
+    def construct_cathode_mesh(self, geom):
+        """Construct mesh for double-sided cathode X-ARAPUCAs"""
+        
+
+        # Create outer module box to contain the mesh
+        module_shape = geom.shapes.Box(
+            "CathodeArapucaMeshModule",
+            dx=2*self.params['CathodeArapucaMeshRodRadius'],
+            dy=self.cathode['widthCathodeVoid']/2.,
+            dz=self.cathode['lengthCathodeVoid']/2.
+        )
+
+        # Create vertical rod shape
+        vert_rod = geom.shapes.Tubs(
+            "CathodeArapucaMeshRod_vertical",
+            rmin=Q('0cm'),
+            rmax=self.params['CathodeArapucaMeshRodRadius'],
+            dz=self.cathode['widthCathodeVoid']/2.
+        )
+
+        # Create horizontal rod shape
+        horiz_rod = geom.shapes.Tubs(
+            "CathodeArapucaMeshRod_horizontal",
+            rmin=Q('0cm'),
+            rmax=self.params['CathodeArapucaMeshRodRadius'], 
+            dz=self.cathode['lengthCathodeVoid']/2.,
+        )
+
+        # Create volume for module
+        mesh_vol = geom.structure.Volume(
+            "volCathodeArapucaMesh",
+            material="LAr",
+            shape=module_shape
+        )
+
+        # print(int(self.params['CathodeArapucaMeshNumberOfBars_vertical']),int(self.params['CathodeArapucaMeshNumberOfBars_horizontal']))
+
+        # Add vertical rods
+        n_vert = int(self.params['CathodeArapucaMeshNumberOfBars_vertical'])
+        for i in range(n_vert):
+            # Create volume for vertical rod
+            vert_rod_vol = geom.structure.Volume(
+                f"volCathodeArapucaMeshRod_vertical_{i}",
+                material="STEEL_STAINLESS_Fe7Cr2Ni",
+                shape=vert_rod
+            )
+            
+            # Place vertical rod in module
+            pos = geom.structure.Position(
+                f"posCathodeMeshRod_vertical{i}",
+                x=-(self.params['CathodeArapucaMeshRodRadius']),
+                y=Q('0cm'),
+                z=-self.cathode['lengthCathodeVoid']/2 + \
+                self.params['CathodeArapucaMesh_verticalOffset'] + \
+                i*self.params['CathodeArapucaMeshRodSeparation']
+            )
+            
+            place = geom.structure.Placement(
+                f"placeCathodeMeshRod_vertical{i}",
+                volume=vert_rod_vol,
+                pos=pos,
+                rot='rPlus90AboutX'
+            )
+            mesh_vol.placements.append(place.name)
+
+        # Add horizontal rods  
+        n_horiz = int(self.params['CathodeArapucaMeshNumberOfBars_horizontal'])
+        for i in range(n_horiz):
+            # Create volume for horizontal rod
+            horiz_rod_vol = geom.structure.Volume(
+                f"volCathodeArapucaMeshRod_horizontal_{i}",
+                material="STEEL_STAINLESS_Fe7Cr2Ni", 
+                shape=horiz_rod
+            )
+
+            # Place horizontal rod in module
+            pos = geom.structure.Position(
+                f"posCathodeMeshRod_horizontal{i}",
+                x=(self.params['CathodeArapucaMeshRodRadius']),
+                y=-self.cathode['widthCathodeVoid']/2 + \
+                self.params['CathodeArapucaMesh_horizontalOffset'] + \
+                i*self.params['CathodeArapucaMeshRodSeparation'],
+                z=Q('0cm')
+            )
+
+            place = geom.structure.Placement(
+                f"placeCathodeMeshRod_horizontal{i}",
+                volume=horiz_rod_vol,
+                pos=pos,
+            )
+            mesh_vol.placements.append(place.name)
+
+        self.add_volume(mesh_vol)
+        return mesh_vol
+
+
+        # # Create vertical rod shape
+        # vert_rod = geom.shapes.Tubs(
+        #     f"{self.name}_cathode_xarapuca_vert_rod",  # Make name unique
+        #     rmin = Q('0cm'),
+        #     rmax=self.params['CathodeArapucaMeshRodRadius'],
+        #     dz=self.params['MeshTubeLength_vertical']/2.
+        # )
+        
+        # # Create horizontal rod shape  
+        # horiz_rod = geom.shapes.Tubs(
+        #     f"{self.name}_cathode_xarapuca_horiz_rod",  # Make name unique
+        #     rmin = Q('0cm'),
+        #     rmax=self.params['CathodeArapucaMeshRodRadius'],
+        #     dz=self.params['MeshTubeLength_horizontal']/2.
+        # )
+
+        # # Build mesh starting with first vertical rod
+        # mesh_shape = vert_rod
+        
+        # # Add remaining vertical rods
+        # for i in range(1, self.params['CathodeArapucaMeshNumberOfBars_vertical']):
+        #     pos_y = i * self.params['CathodeArapucaMeshRodSeparation'] #+ self.params['CathodeArapucaMesh_verticalOffset']
+        #     mesh_shape = geom.shapes.Boolean(
+        #         f"{self.name}_cathode_mesh_v{i}",  # Make name unique
+        #         type='union',
+        #         first=mesh_shape,
+        #         second=vert_rod,
+        #         pos=geom.structure.Position(
+        #             f"{self.name}_cathode_vrod_pos{i}",  # Make name unique
+        #             x=Q('0cm'),
+        #             y=pos_y, 
+        #             z=Q('0cm')
+        #         )
+        #     )
+
+        # # Add horizontal rods
+        # for i in range(self.params['CathodeArapucaMeshNumberOfBars_horizontal']):
+        #     pos_z = i * self.params['CathodeArapucaMeshRodSeparation']  - self.cathode['lengthCathodeVoid']/2. #+ self.params['CathodeArapucaMesh_horizontalOffset']
+        #     mesh_shape = geom.shapes.Boolean(
+        #         f"{self.name}_cathode_mesh_h{i}",  # Make name unique
+        #         type='union',
+        #         first=mesh_shape,
+        #         second=horiz_rod,
+        #         pos=geom.structure.Position(
+        #             f"{self.name}_cathode_hrod_pos{i}",  # Make name unique
+        #             x=Q('0cm'),
+        #             y=self.cathode['widthCathodeVoid']/2. - self.params['CathodeArapucaMeshRodSeparation'],
+        #             z=pos_z,
+        #         ),
+        #         rot='rPlus90AboutX'
+        #     )
+
+        # # Create volume for complete mesh
+        # mesh_vol = geom.structure.Volume(
+        #     f"{self.name}_volCathodeXarapucaMesh",  # Make name unique
+        #     material="STEEL_STAINLESS_Fe7Cr2Ni",
+        #     shape=mesh_shape
+        # )
+        
+        # # print(f"Adding volume {mesh_vol.name} to builder")
+
+        self.add_volume(mesh_vol)
+        return mesh_vol
+
 
     def construct(self, geom):
         """Construct the X-ARAPUCA geometry."""
@@ -147,12 +329,17 @@ class XARAPUCABuilder(gegede.builder.Builder):
                                                 shape=double_window_shape)
         double_window_vol.params.append(("SensDet","PhotonDetector"))
 
+
+       
+
+
         # Add volumes to builder
         self.add_volume(wall_vol)
         self.add_volume(window_vol)
         self.add_volume(double_wall_vol)
         self.add_volume(double_window_vol)
-        
+
+        self.construct_cathode_mesh(geom)
         
 
     def calculate_cathode_positions(self, idx, cathode_center_x, cathode_center_y, cathode_center_z):

@@ -75,6 +75,7 @@ class CryostatBuilder(gegede.builder.Builder):
             elif name == 'cathode':
                 builder.configure(tpc_params=self.tpc,
                                   cathode_parameters=self.cathode,
+                                  arapucamesh_switch=self.arapucamesh_switch,  # Add this line
                                   print_config=print_config,
                                   print_construct=print_construct,  
                                   **kwds)
