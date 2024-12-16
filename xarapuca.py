@@ -520,98 +520,226 @@ class XARAPUCABuilder(gegede.builder.Builder):
         return positions
 
     def calculate_lateral_positions(self, frame_center_x, frame_center_y, frame_center_z):
-        '''Calculate positions of X-ARAPUCAs on lateral walls'''
+        '''Calculate positions of X-ARAPUCAs on lateral walls
+        
+        Returns:
+            List of tuples (x, y, y_sens, z, rotation) containing:
+            - x,y,z: Main ARAPUCA position
+            - y_sens: Sensor Y position with offset
+            - rotation: Rotation reference name
+        '''
         positions = []
-        
-        # Calculate positions using parameters similar to PERL script
+
+        # print(self.params['VerticalPDdist'])
+
+        # Calculate positions for 8 ARAPUCAs    
+        x = frame_center_x
         for i in range(8):
-            x = frame_center_x
             
-            if i < 4:
-                y = frame_center_y
-                if i == 0:
-                    x += self.params['Upper_FirstFrameVertDist']
-            else:
-                y = frame_center_y + 2*self.cathode['widthCathode'] + 2*(self.params['CathodeFrameToFC'] + 
-                    self.params['FCToArapucaSpaceLat'] - self.params['ArapucaOut_y']/2)
-                if i == 4:
-                    x += self.params['Upper_FirstFrameVertDist']
-                    
-            if i in [1,5]:
-                x -= self.params['VerticalPDdist']
-            elif i in [2,6]:
-                x = frame_center_x - self.params['Lower_FirstFrameVertDist'] 
-            elif i in [3,7]:
-                x += self.params['VerticalPDdist']
-                
+            y = frame_center_y
             z = frame_center_z
-
-            positions.append((x,y,z))
             
-        return positions
+            # Handle Y positions and rotations
+            if i < 4:
+                # Left side
+                y_sens = (y + 0.5*self.params['ArapucaOut_y'] - 
+                        0.5*self.params['ArapucaAcceptanceWindow_y'] - 
+                        Q('0.01cm'))
+                rotation = 'rIdentity'
+            else:
+                # Right side - adjust Y position
+                y = (y + 2*self.cathode['widthCathode'] + 
+                    2*(self.params['CathodeFrameToFC'] + 
+                        self.params['FCToArapucaSpaceLat'] - 
+                        self.params['ArapucaOut_y']/2))
+                y_sens = (y - 0.5*self.params['ArapucaOut_y'] + 
+                        0.5*self.params['ArapucaAcceptanceWindow_y'] + 
+                        Q('0.01cm'))
+                rotation = 'rPlus180AboutX'
 
-    def place_lateral_xarapucas(self, geom, argon_vol, frame_center_x, frame_center_y, frame_center_z):
-        """Place lateral X-ARAPUCAs in the volume.
+            # Handle X positions
+            if i == 0 or i == 4:
+                # First tile position from top anode
+                x = frame_center_x + self.params['Upper_FirstFrameVertDist']
+            elif i == 1 or i == 5:
+                # Second tile position 
+                x -= self.params['VerticalPDdist']
+            elif i == 2 or i == 6:
+                # First tile position from bottom anode
+                x = frame_center_x - self.params['Lower_FirstFrameVertDist']
+            elif i == 3 or i == 7:
+                # Last tile position
+                x += self.params['VerticalPDdist']
+
+            # Store all position information
+            positions.append({
+                'index': i,
+                'x': x,
+                'y': y, 
+                'y_sens': y_sens,
+                'z': z,
+                'rotation': rotation
+            })
+
+        return positions
+    
+    def place_lateral_xarapucas(self, geom, volume, frame_center_x, frame_center_y, frame_center_z):
+        '''Place the lateral ARAPUCAs in the given volume'''
         
-        Args:
-            geom: The geometry context
-            argon_vol: The volume to place X-ARAPUCAs in
-            frame_center_x: X coordinate of frame center
-            frame_center_y: Y coordinate of frame center 
-            frame_center_z: Z coordinate of frame center
-        """
-        # Get volumes
+        positions = self.calculate_lateral_positions(
+            frame_center_x,
+            frame_center_y, 
+            frame_center_z
+        )
+
+        lat_z = 0
+
         wall_vol = self.get_volume('volXARAPUCAWall')
         window_vol = self.get_volume('volXARAPUCAWindow')
         mesh_vol = self.get_volume('volArapucaMesh')
 
-        # Get positions
-        positions = self.calculate_lateral_positions(
-            frame_center_x, frame_center_y, frame_center_z
-        )
+        for pos in positions:
+            i = pos['index']
 
-        # Place ARAPUCAs and their meshes
-        for i, (x,y,z) in enumerate(positions):
-            # Place ARAPUCA wall
-            wall_place = geom.structure.Placement(
-                f"lateral_arapuca_wall_place_{i}",
-                volume=wall_vol,
-                pos=geom.structure.Position(
-                    f"lateral_arapuca_wall_pos_{i}", 
-                    x=x, y=y, z=z
-                ),
-                rot='rIdentity' if i<4 else 'rPlus180AboutX'
-            )
-            argon_vol.placements.append(wall_place.name)
-
-            # Place sensitive window 
-            y_sens = y + 0.5*self.params['ArapucaOut_y'] - \
-                    0.5*self.params['ArapucaAcceptanceWindow_y'] - Q('0.01cm') if i<4 else \
-                    y - 0.5*self.params['ArapucaOut_y'] + \
-                    0.5*self.params['ArapucaAcceptanceWindow_y'] + Q('0.01cm')
+            # print(pos['x'], pos['y'], pos['z'])
             
-            window_place = geom.structure.Placement(
-                f"lateral_arapuca_window_place_{i}",
-                volume=window_vol, 
-                pos=geom.structure.Position(
-                    f"lateral_arapuca_window_pos_{i}",
-                    x=x, y=y_sens, z=z
-                )
-            )
-            argon_vol.placements.append(window_place.name)
+            # Place main ARAPUCA volume
+            main_pos = geom.structure.Position(
+                f"posArapuca{i}-Lat-{lat_z}",
+                x=pos['x'],
+                y=pos['y'],
+                z=pos['z'])
+                
+            main_place = geom.structure.Placement(
+                f"placeArapuca{i}-Lat-{lat_z}",
+                volume=wall_vol,
+                pos=main_pos,
+                rot=pos['rotation'])
+            
+            volume.placements.append(main_place.name)
 
-            # Place mesh if enabled
+            # Place sensitive volume 
+            sens_pos = geom.structure.Position(
+                f"posOpArapuca{i}-Lat-{lat_z}",
+                x=pos['x'],
+                y=pos['y_sens'],
+                z=pos['z'])
+                
+            sens_place = geom.structure.Placement(
+                f"placeOpArapuca{i}-Lat-{lat_z}",
+                volume=window_vol,
+                pos=sens_pos)
+                
+            volume.placements.append(sens_place.name)
+
             if hasattr(self, 'arapucamesh_switch') and self.arapucamesh_switch:
-                mesh_y = y + self.params['Distance_Mesh_Window'] if i<4 else \
-                        y - self.params['Distance_Mesh_Window']
+                mesh_y = pos['y'] + self.params['Distance_Mesh_Window'] if i<4 else \
+                        pos['y'] - self.params['Distance_Mesh_Window']
                         
                 mesh_place = geom.structure.Placement(
                     f"lateral_arapuca_mesh_place_{i}",
                     volume=mesh_vol,
                     pos=geom.structure.Position(
                         f"lateral_arapuca_mesh_pos_{i}",
-                        x=x, y=mesh_y, z=z
+                        x=pos['x'], y=mesh_y, z=pos['z']
                     ),
                     rot='rot90AboutY' if i<4 else 'rot05'
                 )
-                argon_vol.placements.append(mesh_place.name)
+                volume.placements.append(mesh_place.name)
+
+        # def calculate_lateral_positions(self, frame_center_x, frame_center_y, frame_center_z):
+        #     '''Calculate positions of X-ARAPUCAs on lateral walls'''
+        #     positions = []
+            
+        #     # Calculate positions using parameters similar to PERL script
+        #     for i in range(8):
+        #         x = frame_center_x
+                
+        #         if i < 4:
+        #             y = frame_center_y
+        #             if i == 0:
+        #                 x += self.params['Upper_FirstFrameVertDist']
+        #         else:
+        #             y = frame_center_y + 2*self.cathode['widthCathode'] + 2*(self.params['CathodeFrameToFC'] + 
+        #                 self.params['FCToArapucaSpaceLat'] - self.params['ArapucaOut_y']/2)
+        #             if i == 4:
+        #                 x += self.params['Upper_FirstFrameVertDist']
+                        
+        #         if i in [1,5]:
+        #             x -= self.params['VerticalPDdist']
+        #         elif i in [2,6]:
+        #             x = frame_center_x - self.params['Lower_FirstFrameVertDist'] 
+        #         elif i in [3,7]:
+        #             x += self.params['VerticalPDdist']
+                    
+        #         z = frame_center_z
+
+        #         positions.append((x,y,z))
+                
+        #     return positions
+
+    # def place_lateral_xarapucas(self, geom, argon_vol, frame_center_x, frame_center_y, frame_center_z):
+    #     """Place lateral X-ARAPUCAs in the volume.
+        
+    #     Args:
+    #         geom: The geometry context
+    #         argon_vol: The volume to place X-ARAPUCAs in
+    #         frame_center_x: X coordinate of frame center
+    #         frame_center_y: Y coordinate of frame center 
+    #         frame_center_z: Z coordinate of frame center
+    #     """
+    #     # Get volumes
+    #     wall_vol = self.get_volume('volXARAPUCAWall')
+    #     window_vol = self.get_volume('volXARAPUCAWindow')
+    #     mesh_vol = self.get_volume('volArapucaMesh')
+
+    #     # Get positions
+    #     positions = self.calculate_lateral_positions(
+    #         frame_center_x, frame_center_y, frame_center_z
+    #     )
+
+    #     # Place ARAPUCAs and their meshes
+    #     for i, (x,y,z) in enumerate(positions):
+    #         # Place ARAPUCA wall
+    #         wall_place = geom.structure.Placement(
+    #             f"lateral_arapuca_wall_place_{i}",
+    #             volume=wall_vol,
+    #             pos=geom.structure.Position(
+    #                 f"lateral_arapuca_wall_pos_{i}", 
+    #                 x=x, y=y, z=z
+    #             ),
+    #             rot='rIdentity' if i<4 else 'rPlus180AboutX'
+    #         )
+    #         argon_vol.placements.append(wall_place.name)
+
+    #         # Place sensitive window 
+    #         y_sens = y + 0.5*self.params['ArapucaOut_y'] - \
+    #                 0.5*self.params['ArapucaAcceptanceWindow_y'] - Q('0.01cm') if i<4 else \
+    #                 y - 0.5*self.params['ArapucaOut_y'] + \
+    #                 0.5*self.params['ArapucaAcceptanceWindow_y'] + Q('0.01cm')
+            
+    #         window_place = geom.structure.Placement(
+    #             f"lateral_arapuca_window_place_{i}",
+    #             volume=window_vol, 
+    #             pos=geom.structure.Position(
+    #                 f"lateral_arapuca_window_pos_{i}",
+    #                 x=x, y=y_sens, z=z
+    #             )
+    #         )
+    #         argon_vol.placements.append(window_place.name)
+
+    #         # Place mesh if enabled
+    #         if hasattr(self, 'arapucamesh_switch') and self.arapucamesh_switch:
+    #             mesh_y = y + self.params['Distance_Mesh_Window'] if i<4 else \
+    #                     y - self.params['Distance_Mesh_Window']
+                        
+    #             mesh_place = geom.structure.Placement(
+    #                 f"lateral_arapuca_mesh_place_{i}",
+    #                 volume=mesh_vol,
+    #                 pos=geom.structure.Position(
+    #                     f"lateral_arapuca_mesh_pos_{i}",
+    #                     x=x, y=mesh_y, z=z
+    #                 ),
+    #                 rot='rot90AboutY' if i<4 else 'rot05'
+    #             )
+    #             argon_vol.placements.append(mesh_place.name)
