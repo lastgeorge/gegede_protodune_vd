@@ -166,7 +166,25 @@ class SteelSupportBuilder(gegede.builder.Builder):
                 'cross_bar': {'dx': Q('102.5cm'), 'dy': Q('13.6cm'), 'dz': Q('27.4cm')},
                 'bar_hole': {'dx': Q('102.5cm'), 'dy': Q('6.425cm'), 'dz': Q('24.96cm')},
                 'offsets': {'x': Q('5.701cm'), 'y': Q('0.451cm')},
+                'name': 'WallU'
+            },
+            'wallS': {  # Add parameters for short wall
+                'main_box': {'dx': Q('137.8cm'), 'dy': Q('160cm'), 'dz': Q('61.8cm')},
+                'inner_box': {'dx': Q('136.9cm'), 'dy': Q('158.2cm'), 'dz': Q('56.2cm')},
+                'hole': {'dx': Q('126.4cm'), 'dy': Q('137.2cm'), 'dz': Q('61.801cm')},
+                'cross_bar': {'dx': Q('102.5cm'), 'dy': Q('13.6cm'), 'dz': Q('27.4cm')},
+                'bar_hole': {'dx': Q('102.5cm'), 'dy': Q('6.425cm'), 'dz': Q('24.96cm')},
+                'offsets': {'x': Q('5.701cm'), 'y': Q('0.451cm')},
                 'name': 'WallS'
+            },
+            'wallL': {  # Add parameters for long wall
+                'main_box': {'dx': Q('170.2cm'), 'dy': Q('160cm'), 'dz': Q('61.8cm')},
+                'inner_box': {'dx': Q('169.3cm'), 'dy': Q('158.2cm'), 'dz': Q('56.2cm')},
+                'hole': {'dx': Q('158.8cm'), 'dy': Q('137.2cm'), 'dz': Q('61.801cm')},
+                'cross_bar': {'dx': Q('135.8cm'), 'dy': Q('13.6cm'), 'dz': Q('27.4cm')},
+                'bar_hole': {'dx': Q('135.8cm'), 'dy': Q('6.425cm'), 'dz': Q('24.96cm')},
+                'offsets': {'x': Q('5.701cm'), 'y': Q('0.451cm')},
+                'name': 'WallL'
             }
         }
 
@@ -198,6 +216,8 @@ class SteelSupportBuilder(gegede.builder.Builder):
         bar_cent = create_bar_with_holes(unit_params['central'], 'central')
         bar_top = create_bar_with_holes(unit_params['top'], 'top')
         bar_wall = create_bar_with_holes(unit_params['wall'], 'wall')
+        bar_wallL = create_bar_with_holes(unit_params['wallL'], 'wallL')
+        bar_wallS = create_bar_with_holes(unit_params['wallS'], 'wallS')
 
         # Create unit volumes
         for unit_type, params in unit_params.items():
@@ -251,6 +271,26 @@ class SteelSupportBuilder(gegede.builder.Builder):
                         x=Q('-9.1cm'), y=Q('0cm'), z=Q('-17.2cm')),
                     rot=geom.structure.Rotation("rotUni2",
                         x="0deg", y="0deg", z="90deg"))
+            elif unit_type == 'wallS':
+                # For short wall unit
+                box_uni = geom.shapes.Boolean("boxUniWallS",
+                    type='union',
+                    first=box_large,
+                    second=bar_cent,
+                    pos=geom.structure.Position("posboxUni3",
+                        x=Q('-9.1cm'), y=Q('0cm'), z=Q('-17.2cm')),
+                    rot=geom.structure.Rotation("rotUni3",
+                        x="0deg", y="0deg", z="90deg"))
+            elif unit_type == 'wallL':
+                # For long wall unit
+                box_uni = geom.shapes.Boolean("boxUniWallL",
+                    type='union',
+                    first=box_large,
+                    second=bar_cent,
+                    pos=geom.structure.Position("posboxUni4",
+                        x=Q('-25.3cm'), y=Q('0cm'), z=Q('-17.2cm')),
+                    rot=geom.structure.Rotation("rotUni4",
+                        x="0deg", y="0deg", z="90deg"))
 
 
             # Add second bar
@@ -280,7 +320,21 @@ class SteelSupportBuilder(gegede.builder.Builder):
                     second=bar_wall,
                     pos=geom.structure.Position("posUniWallU",
                         x=Q('-16.75cm'), y=Q('0cm'), z=Q('-17.2cm')))
-    
+            elif unit_type == 'wallL':
+                # Long wall unit: add wall bar with offset
+                final_shape = geom.shapes.Boolean("UnitWallL",
+                    type='union',
+                    first=box_uni,
+                    second=bar_wallL,
+                    pos=geom.structure.Position("posUniWallL",
+                        x=Q('-16.3cm'), y=Q('0cm'), z=Q('-17.2cm')))
+            elif unit_type == 'wallS':
+                final_shape = geom.shapes.Boolean("UnitWallS",
+                    type='union',
+                    first=box_uni,
+                    second=bar_wallS,
+                    pos=geom.structure.Position("posUniWallS",
+                        x=Q('-16.75cm'), y=Q('0cm'), z=Q('-17.2cm')))
 
             # Create volume
             vol = geom.structure.Volume(f"volUnit{params['name']}",
@@ -405,7 +459,108 @@ class SteelSupportBuilder(gegede.builder.Builder):
         self.add_volume(us_vol)
         return us_vol
 
+    def construct_LR(self, geom):
+        """Construct the left/right steel support structure"""
+        
+        # Create main LR volume
+        lr_shape = geom.shapes.Box("boxCryoWallLg", 
+                                dx=Q("1140.4cm")/2,
+                                dy=Q("1075.6cm")/2,
+                                dz=Q("61.8cm")/2)
 
+        lr_vol = geom.structure.Volume("volSteelSupport_LR",
+                                    material="Air",
+                                    shape=lr_shape)
+
+        # Place the center unit volumes (5x5 grid)
+        for i in range(5):  # x positions: -320 to 320 in steps of 160
+            for j in range(5):  # y positions: -320 to 320 in steps of 160
+                x = Q(f"{-320 + i*160}cm")
+                y = Q(f"{-320 + j*160}cm")
+                z = Q("0cm")
+
+                # Place central unit 
+                cent_vol = self.get_volume("volUnitCent")
+                pos = geom.structure.Position(
+                    f"posUnitLRCent_{i}-{j}",
+                    x=x, y=y, z=z)
+
+                place = geom.structure.Placement(
+                    f"volUnitLRCent_{i}-{j}",
+                    volume=cent_vol,
+                    pos=pos)
+
+                lr_vol.placements.append(place.name)
+
+        # Get wall volumes
+        wall_L_vol = self.get_volume("volUnitWallL")
+        wall_S_vol = self.get_volume("volUnitWallS") 
+
+        # Place the edge unit volumes (E, S, W, N) for each row
+        for i in range(5):  # positions: -320 to 320 in steps of 160 
+            base = Q(f"{-320 + i*160}cm")
+
+            # East edge (LRE)
+            pos_e = geom.structure.Position(
+                f"posUnitLRE_{i}",
+                x=Q("485.1cm"), y=base, z=Q("0cm"))
+            
+            place_e = geom.structure.Placement(
+                f"volUnitLRE_{i}", 
+                volume=wall_L_vol,
+                pos=pos_e)
+            lr_vol.placements.append(place_e.name)
+
+            # South edge (LRS) 
+            pos_s = geom.structure.Position(
+                f"posUnitLRS_{i}",
+                x=base, y=Q("468.9cm"), z=Q("0cm"))
+                
+            rot_s = geom.structure.Rotation(
+                f"rotUnitLRS_{i}",
+                x="0deg", y="0deg", z="-90deg")
+                
+            place_s = geom.structure.Placement(
+                f"volUnitLRS_{i}",
+                volume=wall_S_vol, 
+                pos=pos_s,
+                rot=rot_s)
+            lr_vol.placements.append(place_s.name)
+
+            # West edge (LRW)
+            pos_w = geom.structure.Position(
+                f"posUnitLRW_{i}",
+                x=Q("-485.1cm"), y=base, z=Q("0cm"))
+                
+            rot_w = geom.structure.Rotation(
+                f"rotUnitLRW_{i}",
+                x="0deg", y="0deg", z="-180deg")
+                
+            place_w = geom.structure.Placement(
+                f"volUnitLRW_{i}",
+                volume=wall_L_vol,
+                pos=pos_w,
+                rot=rot_w)
+            lr_vol.placements.append(place_w.name)
+
+            # North edge (LRN)
+            pos_n = geom.structure.Position(
+                f"posUnitLRN_{i}",
+                x=base, y=Q("-468.9cm"), z=Q("0cm"))
+                
+            rot_n = geom.structure.Rotation(
+                f"rotUnitLRN_{i}",
+                x="0deg", y="0deg", z="-270deg")
+                
+            place_n = geom.structure.Placement(
+                f"volUnitLRN_{i}",
+                volume=wall_S_vol,
+                pos=pos_n,
+                rot=rot_n)
+            lr_vol.placements.append(place_n.name)
+
+        self.add_volume(lr_vol)
+        return lr_vol
 
 
     def construct(self, geom):
@@ -421,6 +576,9 @@ class SteelSupportBuilder(gegede.builder.Builder):
         # Construct upstream steel support structure
         self.construct_US(geom)
 
+        # Construct left/right steel support structure
+        self.construct_LR(geom)
+
 
     def place_in_volume(self, geom, main_lv):
         """Place steel support structure in the given volume"""
@@ -428,6 +586,7 @@ class SteelSupportBuilder(gegede.builder.Builder):
         # Get steel support volume
         steel_TB_vol = self.get_volume('volSteelSupport_TB')
         steel_US_vol = self.get_volume('volSteelSupport_US')
+        steel_LR_vol = self.get_volume('volSteelSupport_LR')
         
         # Configuration for top and bottom placements
         placements = [
@@ -476,6 +635,30 @@ class SteelSupportBuilder(gegede.builder.Builder):
                     'y': "0deg", 
                     'z': "0deg"
                 }
+            },
+            # Left placement
+            {
+                'name': 'LS',
+                'volume': steel_LR_vol,
+                'x_offset': Q("65.1cm"),
+                'pos_param': 'posLeftSteelStruct',
+                'rotation': {
+                    'x': "0deg", 
+                    'y': "-90deg", 
+                    'z': "0deg"
+                }
+            },
+            # Right placement
+            {
+                'name': 'RS',
+                'volume': steel_LR_vol,
+                'x_offset': -Q("65.1cm"),
+                'pos_param': 'posRightSteelStruct',
+                'rotation': {
+                    'x': "0deg", 
+                    'y': "90deg", 
+                    'z': "0deg"
+                }
             }
         ]
         
@@ -490,8 +673,10 @@ class SteelSupportBuilder(gegede.builder.Builder):
                 # print(self.params[cfg['pos_param']], cfg['y_offset'])
             elif 'z_offset' in cfg:
                 pos_args['z'] = self.params[cfg['pos_param']] + cfg['z_offset']
+            elif 'x_offset' in cfg:
+                pos_args['x'] = self.params[cfg['pos_param']] + cfg['x_offset']
 
-            # print(cfg['name'], pos_args)
+            
 
                 
             pos = geom.structure.Position(
