@@ -692,7 +692,7 @@ class SteelSupportBuilder(gegede.builder.Builder):
                     z=cfg['rotation']['z'])
                 
                 # Place with rotation
-                place = geom.structure.Placement(
+                place = geom.structure.Placement( 
                     f"placeSteelSupport_{cfg['name']}",
                     volume=cfg['volume'],
                     pos=pos,
