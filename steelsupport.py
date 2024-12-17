@@ -21,19 +21,8 @@ class SteelSupportBuilder(gegede.builder.Builder):
         self.print_construct = print_construct
 
         if steel_parameters:
-            self.params = {
-                'SteelSupport_x': steel_parameters.get('SteelSupport_x'),
-                'SteelSupport_y': steel_parameters.get('SteelSupport_y'),
-                'SteelSupport_z': steel_parameters.get('SteelSupport_z'),
-                'SteelPlate': steel_parameters.get('SteelPlate'),
-                'FracMassOfSteel': steel_parameters.get('FracMassOfSteel'),
-                'FracMassOfAir': steel_parameters.get('FracMassOfAir'),
-                'SpaceSteelSupportToWall': steel_parameters.get('SpaceSteelSupportToWall'),
-                'SpaceSteelSupportToCeiling': steel_parameters.get('SpaceSteelSupportToCeiling')
-            }
+            self.params = steel_parameters.copy()
         
-    # ...existing code...
-
     def construct_TB(self, geom):
         """Construct the top/bottom steel support structure"""
         
@@ -68,183 +57,207 @@ class SteelSupportBuilder(gegede.builder.Builder):
                     
                 tb_vol.placements.append(place.name)
 
-        # Place the edge unit volumes 
-        edge_positions = {
-            'E': {'x': Q("454.2cm"), 'rot': None},
-            'S': {'x': Q("0cm"), 'rot': "rotTBS"},  
-            'W': {'x': Q("-454.2cm"), 'rot': "rotTBW"},
-            'N': {'x': Q("0cm"), 'rot': "rotTBN"}
-        }
-        
-        for i in range(5):  # For each row/column
-            y = Q(f"{-320 + i*160}cm")
-            
+        # Place the edge unit volumes (E, S, W, N) for each row
+        for i in range(5):  # x positions: -320 to 320 in steps of 160
+            x_base = Q(f"{-320 + i*160}cm")
+            y_base = Q(f"{-320}cm")  
+
             # Get edge unit volume
             top_vol = self.get_volume("volUnitTop")
+
+            # East edge (TBE)
+            pos_e = geom.structure.Position(
+                f"posUnitTBE_{i}",
+                x=Q("454.2cm"),
+                y=y_base + i*Q("160cm"),
+                z=Q("0cm"))
             
-            for edge, params in edge_positions.items():
-                pos = geom.structure.Position(
-                    f"posUnitTB{edge}_{i}",
-                    x=params['x'],
-                    y=y,
-                    z=Q("0cm"))
-                    
-                if params['rot']:
-                    # Create rotation for this edge
-                    if edge == 'S':
-                        rot = geom.structure.Rotation(
-                            f"{params['rot']}_{i}", x="0deg", y="0deg", z="-90deg")
-                    elif edge == 'W':
-                        rot = geom.structure.Rotation(
-                            f"{params['rot']}_{i}", x="0deg", y="0deg", z="-180deg")  
-                    elif edge == 'N':
-                        rot = geom.structure.Rotation(
-                            f"{params['rot']}_{i}", x="0deg", y="0deg", z="-270deg")
-                        
-                    place = geom.structure.Placement(
-                        f"volUnitTB{edge}_{i}",
-                        volume=top_vol,
-                        pos=pos,
-                        rot=rot)
-                else:
-                    place = geom.structure.Placement(
-                        f"volUnitTB{edge}_{i}",
-                        volume=top_vol, 
-                        pos=pos)
-                    
-                tb_vol.placements.append(place.name)
+            place_e = geom.structure.Placement(
+                f"volUnitTBE_{i}",
+                volume=top_vol,
+                pos=pos_e)
+            tb_vol.placements.append(place_e.name)
+
+            # South edge (TBS)
+            pos_s = geom.structure.Position(
+                f"posUnitTBS_{i}",
+                x=x_base,
+                y=Q("454.2cm"),
+                z=Q("0cm"))
+            
+            rot_s = geom.structure.Rotation(
+                f"rotUnitTBS_{i}", 
+                x="0deg", y="0deg", z="-90deg")
+
+            place_s = geom.structure.Placement(
+                f"volUnitTBS_{i}",
+                volume=top_vol,
+                pos=pos_s,
+                rot=rot_s)
+            tb_vol.placements.append(place_s.name)
+
+            # West edge (TBW)
+            pos_w = geom.structure.Position(
+                f"posUnitTBW_{i}",
+                x=Q("-454.2cm"),
+                y=y_base + i*Q("160cm"),
+                z=Q("0cm"))
+            
+            rot_w = geom.structure.Rotation(
+                f"rotUnitTBW_{i}",
+                x="0deg", y="0deg", z="-180deg")
+
+            place_w = geom.structure.Placement(
+                f"volUnitTBW_{i}",
+                volume=top_vol,
+                pos=pos_w,
+                rot=rot_w)
+            tb_vol.placements.append(place_w.name)
+
+            # North edge (TBN)
+            pos_n = geom.structure.Position(
+                f"posUnitTBN_{i}",
+                x=x_base,
+                y=Q("-454.2cm"),
+                z=Q("0cm"))
+            
+            rot_n = geom.structure.Rotation(
+                f"rotUnitTBN_{i}",
+                x="0deg", y="0deg", z="-270deg")
+
+            place_n = geom.structure.Placement(
+                f"volUnitTBN_{i}",
+                volume=top_vol,
+                pos=pos_n,
+                rot=rot_n)
+            tb_vol.placements.append(place_n.name)
+
 
         self.add_volume(tb_vol)
         return tb_vol
 
     def construct_unit_volumes(self, geom):
-        """Construct the central and top unit volumes for the steel support structure"""
+        """Construct the central and top unit volumes that make up the steel support structure"""
         
         # Define parameters for central and top units
         unit_params = {
             'central': {
-                'box1': {'dx': Q('160cm'), 'dy': Q('160cm'), 'dz': Q('61.8cm')},
-                'box2': {'dx': Q('158.2cm'), 'dy': Q('158.2cm'), 'dz': Q('56.2cm')},
-                'box3': {'dx': Q('137.2cm'), 'dy': Q('137.2cm'), 'dz': Q('61.801cm')},
-                'box4': {'dx': Q('158.2cm'), 'dy': Q('13.6cm'), 'dz': Q('27.4cm')},
-                'box5': {'dx': Q('158.2cm'), 'dy': Q('6.425cm'), 'dz': Q('24.96cm')},
-                'bar_positions': {
-                    'x': Q('0cm'),
-                    'y': [Q('3.5876cm'), Q('-3.5876cm')],
-                    'z': Q('-17.2cm')
-                }
+                'main_box': {'dx': Q('160cm'), 'dy': Q('160cm'), 'dz': Q('61.8cm')},
+                'inner_box': {'dx': Q('158.2cm'), 'dy': Q('158.2cm'), 'dz': Q('56.2cm')},
+                'hole': {'dx': Q('137.2cm'), 'dy': Q('137.2cm'), 'dz': Q('61.801cm')},
+                'cross_bar': {'dx': Q('158.2cm'), 'dy': Q('13.6cm'), 'dz': Q('27.4cm')},
+                'bar_hole': {'dx': Q('158.2cm'), 'dy': Q('6.425cm'), 'dz': Q('24.96cm')},
+                'offsets': {'x': Q('0cm'), 'y': Q('0cm')},
+                'name': 'Cent'
             },
             'top': {
-                'box1': {'dx': Q('108.4cm'), 'dy': Q('160cm'), 'dz': Q('61.8cm')},
-                'box2': {'dx': Q('107.5cm'), 'dy': Q('158.2cm'), 'dz': Q('56.2cm')},
-                'box3': {'dx': Q('97cm'), 'dy': Q('137.2cm'), 'dz': Q('61.81cm')},
-                'box4': {'dx': Q('107.5cm'), 'dy': Q('13.6cm'), 'dz': Q('27.4cm')},
-                'box5': {'dx': Q('107.5cm'), 'dy': Q('6.425cm'), 'dz': Q('24.96cm')},
-                'bar_positions': {
-                    'x': [Q('5.6cm'), Q('0.45cm')],
-                    'y': [Q('3.5876cm'), Q('-3.5876cm')],
-                    'z': Q('-17.2cm')
-                }
+                'main_box': {'dx': Q('108.4cm'), 'dy': Q('160cm'), 'dz': Q('61.8cm')},
+                'inner_box': {'dx': Q('107.5cm'), 'dy': Q('158.2cm'), 'dz': Q('56.2cm')},
+                'hole': {'dx': Q('97cm'), 'dy': Q('137.2cm'), 'dz': Q('61.81cm')},
+                'cross_bar': {'dx': Q('107.5cm'), 'dy': Q('13.6cm'), 'dz': Q('27.4cm')},
+                'bar_hole': {'dx': Q('107.5cm'), 'dy': Q('6.425cm'), 'dz': Q('24.96cm')},
+                'offsets': {'x': Q('5.701cm'), 'y': Q('0.451cm')},
+                'name': 'Top'
             }
         }
 
-        def create_boxes(params, prefix):
-            """Helper to create basic box shapes"""
-            boxes = {}
-            for i in range(1, 6):
-                box_params = params[f'box{i}']
-                boxes[f'box{i}'] = geom.shapes.Box(
-                    f"{prefix}box{i}",
-                    dx=box_params['dx']/2,
-                    dy=box_params['dy']/2,
-                    dz=box_params['dz']/2
-                )
-            return boxes
+        def create_box(name, dx, dy, dz):
+            """Helper to create box shape"""
+            return geom.shapes.Box(name, dx=dx/2, dy=dy/2, dz=dz/2)
 
-        def construct_unit(unit_type, boxes):
-            """Helper to construct a unit (central or top) through boolean operations"""
-            prefix = 'Top' if unit_type == 'top' else ''
-            params = unit_params[unit_type]
-            
-            # Create hollow box
-            box_hollow = geom.shapes.Boolean(
-                f"box{prefix}Holl",
+        def create_bar_with_holes(params, prefix):
+            """Helper to create cross bar with holes"""
+            bar = create_box(f"box{prefix}Bar", **params['cross_bar'])
+            hole = create_box(f"box{prefix}Hole", **params['bar_hole'])
+
+            # Create holes in bar
+            bar_i = geom.shapes.Boolean(f"boxBar{prefix}I",
                 type='subtraction',
-                first=boxes['box1'],
-                second=boxes['box2'],
-                pos=geom.structure.Position(
-                    f"posbox{prefix}Holl",
-                    x=Q('0.451cm') if unit_type == 'top' else Q('0cm'),
-                    y=Q('0cm'),
-                    z=Q('0cm')
-                )
-            )
+                first=bar,
+                second=hole,
+                pos=geom.structure.Position(f"posBoxBar{prefix}I",
+                    x=Q('0cm'), y=Q('3.5876cm'), z=Q('0cm')))
+
+            return geom.shapes.Boolean(f"boxBar{prefix}",
+                type='subtraction',
+                first=bar_i,
+                second=hole,
+                pos=geom.structure.Position(f"posBoxBar{prefix}",
+                    x=Q('0cm'), y=Q('-3.5876cm'), z=Q('0cm')))
+
+        # Create bars with respective parameters
+        bar_cent = create_bar_with_holes(unit_params['central'], 'central')
+        bar_top = create_bar_with_holes(unit_params['top'], 'top')
+
+        # Create unit volumes
+        for unit_type, params in unit_params.items():
+            # Create main shapes
+            box1 = create_box(f"box1_{unit_type}", **params['main_box'])
+            box2 = create_box(f"box2_{unit_type}", **params['inner_box'])
+            box3 = create_box(f"box3_{unit_type}", **params['hole'])
+
+            # Hollow out main box
+            box_hollow = geom.shapes.Boolean(f"boxHoll_{unit_type}",
+                type='subtraction',
+                first=box1,
+                second=box2,
+                pos=geom.structure.Position(f"posboxHoll_{unit_type}",
+                    x=params['offsets']['y'], y=Q('0cm'), z=Q('0cm')))
 
             # Remove central hole
-            box_large = geom.shapes.Boolean(
-                f"boxLarge{prefix}",
+            box_large = geom.shapes.Boolean(f"boxLarge_{unit_type}",
                 type='subtraction',
                 first=box_hollow,
-                second=boxes['box3'],
-                pos=geom.structure.Position(
-                    f"posboxLarge{prefix}",
-                    x=Q('5.701cm') if unit_type == 'top' else Q('0cm'),
-                    y=Q('0cm'),
-                    z=Q('0cm')
-                )
-            )
+                second=box3,
+                pos=geom.structure.Position(f"posboxLarge_{unit_type}",
+                    x=params['offsets']['x'], y=Q('0cm'), z=Q('0cm')))
 
-            # Create cross bars
-            bar = boxes['box4']
-            for i, y_pos in enumerate(params['bar_positions']['y']):
-                bar = geom.shapes.Boolean(
-                    f"boxBar{prefix}{i}",
-                    type='subtraction',
-                    first=bar,
-                    second=boxes['box5'],
-                    pos=geom.structure.Position(
-                        f"posboxBar{prefix}{i}",
-                        x=Q('0cm'),
-                        y=y_pos,
-                        z=Q('0cm')
-                    )
-                )
 
-            # Combine pieces
-            final_shape = box_large
-            for i, x_pos in enumerate(params['bar_positions']['x'] if unit_type == 'top' else [params['bar_positions']['x']]):
-                rot = geom.structure.Rotation(
-                    f"rot{prefix}{i}",
-                    x="0deg",
-                    y="0deg",
-                    z="90deg" if i == 0 else "0deg"
-                )
-                final_shape = geom.shapes.Boolean(
-                    f"Unit{prefix}{i}",
+            # Add first cross bar (different for central vs top)
+            if unit_type == 'central':
+                box_uni = geom.shapes.Boolean("boxUniCent",
                     type='union',
-                    first=final_shape,
-                    second=bar,
-                    pos=geom.structure.Position(
-                        f"pos{prefix}{i}",
-                        x=x_pos,
-                        y=Q('0cm'),
-                        z=params['bar_positions']['z']
-                    ),
-                    rot=None if unit_type == 'top' else rot
-                )
+                    first=box_large,
+                    second=bar_cent,
+                    pos=geom.structure.Position("posBoxUniCent",
+                        x=Q('0cm'), y=Q('0cm'), z=Q('-17.2cm')))
+            else:
+                # For top unit, first union uses bar_cent rotated 90
+                box_uni = geom.shapes.Boolean("boxUniTop",
+                    type='union',
+                    first=box_large,
+                    second=bar_cent,
+                    pos=geom.structure.Position("posboxUni1",
+                        x=Q('5.6cm'), y=Q('0cm'), z=Q('-17.2cm')),
+                    rot=geom.structure.Rotation("rotUni1",
+                        x="0deg", y="0deg", z="90deg"))
 
-            return final_shape
+            # Add second bar
+            if unit_type == 'central':
+                # Central unit: add rotated bar_cent
+                final_shape = geom.shapes.Boolean("UnitCent",
+                    type='union',
+                    first=box_uni,
+                    second=bar_cent,
+                    pos=geom.structure.Position("posUnitCent",
+                        x=Q('0cm'), y=Q('0cm'), z=Q('-17.2cm')),
+                    rot=geom.structure.Rotation("rotUnitCent",
+                        x="0deg", y="0deg", z="90deg"))
+            else:
+                # Top unit: add bar_top without rotation
+                final_shape = geom.shapes.Boolean("UnitTop", 
+                    type='union',
+                    first=box_uni,
+                    second=bar_top,
+                    pos=geom.structure.Position("posUniTop",
+                        x=Q('0.45cm'), y=Q('0cm'), z=Q('-17.2cm')))
+    
 
-        # Create volumes for both unit types
-        for unit_type in ['central', 'top']:
-            boxes = create_boxes(unit_params[unit_type], unit_type[0])
-            shape = construct_unit(unit_type, boxes)
-            
-            vol = geom.structure.Volume(
-                f"volUnit{'Top' if unit_type == 'top' else 'Cent'}",
+            # Create volume
+            vol = geom.structure.Volume(f"volUnit{params['name']}",
                 material="STEEL_STAINLESS_Fe7Cr2Ni",
-                shape=shape
-            )
+                shape=final_shape)
+
             self.add_volume(vol)
 
     def construct(self, geom):
@@ -255,8 +268,15 @@ class SteelSupportBuilder(gegede.builder.Builder):
         self.construct_unit_volumes(geom)
             
         # Construct top/bottom steel support structure
-        tb_vol = self.construct_TB(geom)
+        self.construct_TB(geom)
         
+
+    def place_in_volume(self, geom, main_lv):
+        """Place steel support structure in the given volume"""
+        
+        # Get steel support volume
+        steel_TB_vol = self.get_volume('volSteelSupport_TB')
+
         # Create position for top steel support
         top_pos = geom.structure.Position(
             "posSteelSupport_Top",
@@ -271,10 +291,11 @@ class SteelSupportBuilder(gegede.builder.Builder):
         # Create placement
         top_place = geom.structure.Placement(
             "placeSteelSupport_Top",
-            volume=tb_vol,
+            volume=steel_TB_vol,
             pos=top_pos,
             rot=top_rot)
             
-        # Add to main support volume
-        support_vol = self.get_volume("volSteelSupport")
-        support_vol.placements.append(top_place.name)
+        main_lv.placements.append(top_place.name)
+
+
+

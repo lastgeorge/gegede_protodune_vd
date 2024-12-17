@@ -140,30 +140,32 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
             pos=cryo_pos)
 
         # Add the cryostat placement to the detector enclosure volume
-        det_enc_vol.placements.append(cryo_place.name)
+        # det_enc_vol.placements.append(cryo_place.name)
 
-        self.add_volume(det_enc_vol)
-        # For now just create the basic structure
+        
         
         # Get steel support volume and place it
         steel_builder = self.get_builder("steelsupport")
-        steel_vol = steel_builder.get_volume()
+        steel_vol = steel_builder.get_volume('volSteelSuppor')
 
-        # Calculate position (from PERL positioning logic)
+          # Create position for steel support in detector enclosure
+        # Note these positions come from the PERL configuration
         steel_pos = geom.structure.Position(
-            "steel_support_pos",
-            x=Q("0cm"),
-            y=Q("0cm"), 
-            z=Q("0cm"))
-            
+            "posSteelSupport",
+            x=Q('0cm'),
+            y=Q('0cm'), 
+            z=Q('0cm'))
+
+        # Create placement
         steel_place = geom.structure.Placement(
-            "steel_support_place",
+            "placeSteelSupport",
             volume=steel_vol,
             pos=steel_pos)
             
         det_enc_vol.placements.append(steel_place.name)
 
 
+        self.add_volume(det_enc_vol)
 
         
         return

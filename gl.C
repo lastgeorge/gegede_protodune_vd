@@ -44,7 +44,7 @@ void gl()
     TGeoNode *node = cryo->GetDaughter(i);
     TString name(node->GetName());
      cout << i << " " << name << endl;
-     if (name.Contains("steel") || name.Contains("argon")) {
+     if (name.Contains("argon") || name.Contains("cryostat_steel")) {
        node->SetInvisible();
        //node->SetAllInvisible();
      } 

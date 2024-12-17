@@ -171,6 +171,12 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         # Add the cryostat placement to the detector enclosure volume
         main_lv.placements.append(cryo_place.name)
 
+
+        # Place steel support structure
+        steel_builder = self.get_builder("steelsupport")
+        steel_builder.place_in_volume(geom, main_lv)
+
+
         self.add_volume(main_lv)
 
 
