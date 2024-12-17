@@ -276,26 +276,42 @@ class SteelSupportBuilder(gegede.builder.Builder):
         
         # Get steel support volume
         steel_TB_vol = self.get_volume('volSteelSupport_TB')
-
-        # Create position for top steel support
-        top_pos = geom.structure.Position(
-            "posSteelSupport_Top",
-            x=Q("0cm"),
-            y=self.params['posTopSteelStruct'] + Q("61.1cm"),
-            z=Q("0cm"))
+        
+        # Configuration for top and bottom placements
+        placements = [
+            {
+                'name': 'Top',
+                'y_offset': Q("61.1cm"),
+                'pos_param': 'posTopSteelStruct',
+                'rotation': "90deg"
+            },
+            {
+                'name': 'Bottom',
+                'y_offset': -Q("61.1cm"),
+                'pos_param': 'posBotSteelStruct',
+                'rotation': "-90deg"
+            }
+        ]
+        
+        # Create placements for both top and bottom
+        for cfg in placements:
+            pos = geom.structure.Position(
+                f"posSteelSupport_{cfg['name']}",
+                x=Q("0cm"),
+                y=self.params[cfg['pos_param']] + cfg['y_offset'],
+                z=Q("0cm"))
             
-        top_rot = geom.structure.Rotation(
-            "rotSteelSupport_Top",
-            x="90deg", y="0deg", z="0deg")
+            rot = geom.structure.Rotation(
+                f"rotSteelSupport_{cfg['name']}",
+                x=cfg['rotation'], y="0deg", z="0deg")
             
-        # Create placement
-        top_place = geom.structure.Placement(
-            "placeSteelSupport_Top",
-            volume=steel_TB_vol,
-            pos=top_pos,
-            rot=top_rot)
+            place = geom.structure.Placement(
+                f"placeSteelSupport_{cfg['name']}",
+                volume=steel_TB_vol,
+                pos=pos,
+                rot=rot)
             
-        main_lv.placements.append(top_place.name)
+            main_lv.placements.append(place.name)
 
 
 
