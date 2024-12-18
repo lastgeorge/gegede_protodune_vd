@@ -186,6 +186,9 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         steel_builder = self.get_builder("steelsupport")
         steel_builder.place_in_volume(geom, main_lv)
 
+        # Place CRT modules
+        crt_builder = self.get_builder('crt')
+        crt_builder.place_in_volume(geom, main_lv)
 
         self.add_volume(main_lv)
 
