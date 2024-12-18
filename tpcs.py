@@ -42,6 +42,130 @@ def line_clip(x0: float, y0: float, nx: float, ny: float, rcl: float, rcw: float
                 
     return intersections
 
+
+def split_wires(wires, width, theta_deg):
+    """
+    Split wires at y=0 line into two halves.
+    
+    Args:
+        wires: List of wire info
+        width: Width to split at
+        theta_deg: Wire angle in degrees
+        
+    Returns:
+        Tuple of (lower_wires, upper_wires)
+    """
+    yref = 0
+    theta = math.radians(theta_deg)
+    nx = math.cos(theta)
+    ny = math.sin(theta)
+    
+    winfo1 = [] # Lower half
+    winfo2 = [] # Upper half
+    ich1 = 0
+    ich2 = 0
+    
+    for wire in wires:
+        x0 = wire[1]
+        y0 = wire[2] 
+        endpts = wire[4:8]
+        
+        # Find max/min y values
+        y1 = min(endpts[1], endpts[3])
+        y2 = max(endpts[1], endpts[3])
+        
+        # Wire fully in lower half
+        if y2 < yref:
+            wire1 = [ich1, x0, y0, wire[3]] + endpts
+            winfo1.append(wire1)
+            ich1 += 1
+            continue
+            
+        # Wire fully in upper half    
+        if y1 > yref:
+            wire2 = [ich2, x0, y0, wire[3]] + endpts
+            winfo2.append(wire2)
+            ich2 += 1
+            continue
+        
+        # Wire crosses yref - calculate intersection
+        x = x0 + (yref - y0) * nx/ny
+        
+        # Split into two wires
+        endpts1 = list(endpts)
+        endpts2 = list(endpts)
+        
+        if endpts[1] < yref:
+            endpts1[2] = x
+            endpts1[3] = yref
+            endpts2[0] = x
+            endpts2[1] = yref
+        else:
+            endpts1[0] = x
+            endpts1[1] = yref
+            endpts2[2] = x
+            endpts2[3] = yref
+            
+        # Create new wires with adjusted centers
+        wcn1 = [(endpts1[0] + endpts1[2])/2,
+                (endpts1[1] + endpts1[3])/2]
+        dx = endpts1[0] - endpts1[2]
+        dy = endpts1[1] - endpts1[3]
+        wlen1 = (dx*dx + dy*dy)**(0.5)
+        wire1 = [ich1] + wcn1 + [wlen1] + endpts1
+        winfo1.append(wire1)
+        ich1 += 1
+        
+        wcn2 = [(endpts2[0] + endpts2[2])/2,
+                (endpts2[1] + endpts2[3])/2] 
+        dx = endpts2[0] - endpts2[2]
+        dy = endpts2[1] - endpts2[3]
+        wlen2 = (dx*dx + dy*dy)**(0.5)
+        wire2 = [ich2] + wcn2 + [wlen2] + endpts2
+        winfo2.append(wire2)
+        ich2 += 1
+        
+    # Adjust y positions relative to width
+    for w in winfo1:
+        w[5] += -0.25 * width  # y1
+        w[7] += -0.25 * width  # y2
+        w[2] = 0.5 * (w[5] + w[7])  # ycenter
+        
+    for w in winfo2:
+        w[5] += 0.25 * width  # y1
+        w[7] += 0.25 * width  # y2
+        w[2] = 0.5 * (w[5] + w[7])  # ycenter
+            
+    return winfo1, winfo2
+
+def flip_wires(wires):
+    """Flip wire configuration 180 degrees for second CRU.
+    
+    Args:
+        wires: Input wire configurations
+        
+    Returns:
+        list: Flipped wire configurations
+    """
+    winfo = []
+    for wire in wires:
+        # Flip endpoints
+        xn1 = -wire[4]  # -x1
+        yn1 = -wire[5]  # -y1
+        xn2 = -wire[6]  # -x2  
+        yn2 = -wire[7]  # -y2
+
+        # New center
+        xc = 0.5*(xn1 + xn2)
+        yc = 0.5*(yn1 + yn2)
+
+        # Create flipped wire config
+        new_wire = [wire[0], xc, yc, wire[3],
+                    xn1, yn1, xn2, yn2]
+        winfo.append(new_wire)
+
+    return winfo
+
 def generate_wires(length, width, nch, pitch, theta_deg, dia, w1offx, w1offy):
     """
     Generate wire positions for a single CRU plane without splitting.
@@ -213,6 +337,71 @@ class TPCBuilder(gegede.builder.Builder):
 
         return vols['tpc']
 
+    def construct_top_crp(self, geom):
+        """Construct the Cold Readout Plane (CRP).
+        Creates and processes wire configurations for U,V views.
+        """
+        # CRP total dimensions
+        CRP_x = self.params['driftTPCActive'] + self.params['ReadoutPlane']
+        CRP_y = self.params['widthCRP']
+        CRP_z = self.params['lengthCRP']
+
+        if self.print_construct:
+            print(f"CRP dimensions: {CRP_x} x {CRP_y} x {CRP_z}")
+
+        # Generate wire configurations for first CRU
+        if self.params.get('wires_on', 1):  # Check if wires are enabled
+            # U wires
+            winfo_u1 = generate_wires(
+            self.params['lengthPCBActive'], 
+            self.params['widthPCBActive'],
+            self.params['nChans']['Ind1'],
+            self.params['wirePitch']['U'],
+            self.params['wireAngle']['U'].to('deg').magnitude,
+            self.params['padWidth'],
+            self.params['offsetUVwire'][0],
+            self.params['offsetUVwire'][1])
+
+            # V wires  
+            winfo_v1 = generate_wires(
+            self.params['lengthPCBActive'],
+            self.params['widthPCBActive'], 
+            self.params['nChans']['Ind2'],
+            self.params['wirePitch']['V'],
+            self.params['wireAngle']['V'].to('deg').magnitude,
+            self.params['padWidth'],
+            self.params['offsetUVwire'][0], 
+            self.params['offsetUVwire'][1])
+
+            # Generate flipped wires for second CRU
+            winfo_u2 = flip_wires(winfo_u1)
+            winfo_v2 = flip_wires(winfo_v1)
+
+            # Split wires for each quadrant
+            winfo_u1a, winfo_u1b = split_wires(winfo_u1, 
+                               self.params['widthPCBActive'],
+                               self.params['wireAngle']['U'])
+            winfo_v1a, winfo_v1b = split_wires(winfo_v1,
+                               self.params['widthPCBActive'],
+                               self.params['wireAngle']['V'])
+
+            winfo_u2a, winfo_u2b = split_wires(winfo_u2,
+                               self.params['widthPCBActive'],
+                               self.params['wireAngle']['U'])  
+            winfo_v2a, winfo_v2b = split_wires(winfo_v2,
+                               self.params['widthPCBActive'],
+                               self.params['wireAngle']['V'])
+
+            # Store wire configurations for CRM construction
+            self.wire_configs = {
+                'U': [winfo_u1a, winfo_u1b, winfo_u2a, winfo_u2b],
+                'V': [winfo_v1a, winfo_v1b, winfo_v2a, winfo_v2b]
+            }
+
+            # Construct CRM volumes with wire configurations
+            for quad in range(4):
+                self.construct_crm(geom, quad)
+
 
     def construct(self, geom):
         if self.print_construct:
@@ -220,32 +409,35 @@ class TPCBuilder(gegede.builder.Builder):
         
         #print(self.params)
 
-        # This creates full CRU planes that will be split later
-        self.wire_planes['U'] = generate_wires(
-            self.params['lengthPCBActive'],
-            self.params['widthPCBActive'], 
-            self.params['nChans']['Ind1'],
-            self.params['wirePitch']['U'],
-            self.params['wireAngle']['U'].to('deg').magnitude,
-            self.params['padWidth'],
-            self.params['offsetUVwire'][0],
-            self.params['offsetUVwire'][1]
-        )
-        
-        self.wire_planes['V'] = generate_wires(
-            self.params['lengthPCBActive'],
-            self.params['widthPCBActive'],
-            self.params['nChans']['Ind2'],
-            self.params['wirePitch']['V'],
-            self.params['wireAngle']['V'].to('deg').magnitude, 
-            self.params['padWidth'],
-            self.params['offsetUVwire'][0],
-            self.params['offsetUVwire'][1]
-        )
+        # Build top CRP
+        self.construct_top_crp(geom)
 
-        # Construct each quadrant
-        for quad in range(4):
-            tpc_vol = self.construct_crm(geom, quad)
-            self.add_volume(tpc_vol)
+        # # This creates full CRU planes that will be split later
+        # self.wire_planes['U'] = generate_wires(
+        #     self.params['lengthPCBActive'],
+        #     self.params['widthPCBActive'], 
+        #     self.params['nChans']['Ind1'],
+        #     self.params['wirePitch']['U'],
+        #     self.params['wireAngle']['U'].to('deg').magnitude,
+        #     self.params['padWidth'],
+        #     self.params['offsetUVwire'][0],
+        #     self.params['offsetUVwire'][1]
+        # )
+        
+        # self.wire_planes['V'] = generate_wires(
+        #     self.params['lengthPCBActive'],
+        #     self.params['widthPCBActive'],
+        #     self.params['nChans']['Ind2'],
+        #     self.params['wirePitch']['V'],
+        #     self.params['wireAngle']['V'].to('deg').magnitude, 
+        #     self.params['padWidth'],
+        #     self.params['offsetUVwire'][0],
+        #     self.params['offsetUVwire'][1]
+        # )
+
+        # # Construct each quadrant
+        # for quad in range(4):
+        #     tpc_vol = self.construct_crm(geom, quad)
+        #     self.add_volume(tpc_vol)
 
 
