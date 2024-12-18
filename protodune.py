@@ -36,6 +36,9 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         self.OriginYSet = None 
         self.OriginZSet = None
 
+        self.DP_CRT_switch = None  # Add this line
+        self.HD_CRT_switch = None  # Add this line
+
         # Add the subbuilders
         # for name, builder in self.builders.items():
         #     self.add_builder(name, builder)
@@ -48,6 +51,7 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                  DetEncX=None, DetEncY=None, DetEncZ=None, FoamPadding=None, 
                  OriginXSet=None, OriginYSet=None, OriginZSet=None,  
                  cathode_switch=True, fieldcage_switch=True, arapucamesh_switch=True,  # Add these lines
+                 DP_CRT_switch=None, HD_CRT_switch=None,  # Add these lines
                  print_config=False,  
                  print_construct=False,  
                  **kwds):
@@ -88,6 +92,10 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         self.fieldcage_switch = fieldcage_switch  # Add this line
         self.arapucamesh_switch = arapucamesh_switch  # Add this line
 
+        # Store CRT switch settings
+        self.DP_CRT_switch = DP_CRT_switch
+        self.HD_CRT_switch = HD_CRT_switch
+
         self.print_construct = print_construct
         # Mark as configured
         self._configured = True
@@ -121,6 +129,8 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                     OriginXSet=self.OriginXSet,  
                     OriginYSet=self.OriginYSet,
                     OriginZSet=self.OriginZSet,
+                    DP_CRT_switch=self.DP_CRT_switch,  # Add this line
+                    HD_CRT_switch=self.HD_CRT_switch,  # Add this line
                     print_config=print_config,  
                     print_construct=print_construct,  
                     **kwds)
