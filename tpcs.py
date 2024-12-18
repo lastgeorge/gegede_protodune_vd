@@ -144,7 +144,74 @@ class TPCBuilder(gegede.builder.Builder):
         self._configured = True
 
 
-    
+    def construct_crm(self, geom, quad):
+        """Construct one CRM (Cold Readout Module) quadrant."""
+        
+        def make_box(name, dx, dy, dz):
+            """Create a box shape with given dimensions"""
+            return geom.shapes.Box(f"{name}_{quad}", dx=dx/2, dy=dy/2, dz=dz/2)
+        
+        def make_volume(name, shape, material="LAr", **params):
+            """Create a volume with given shape and parameters"""
+            return geom.structure.Volume(f"{name}_{quad}", material=material, shape=shape, **params)
+
+        # Calculate dimensions
+        dims = {
+            'active': (
+                self.params['driftTPCActive'],
+                self.params['widthPCBActive'] / 2,
+                self.params['lengthPCBActive']
+            ),
+            'tpc': (
+                self.params['driftTPCActive'] + self.params['ReadoutPlane'],
+                self.params['widthPCBActive'] / 2,
+                self.params['lengthPCBActive']
+            ),
+            'plane': (
+                self.params['padWidth'],
+                self.params['widthPCBActive'] / 2,
+                self.params['lengthPCBActive']
+            )
+        }
+
+        # Create shapes
+        shapes = {
+            'active': make_box('CRMActive', *dims['active']),
+            'tpc': make_box('CRM', *dims['tpc']),
+            **{plane: make_box(f'CRM{plane}Plane', *dims['plane']) 
+               for plane in ['U', 'V', 'Z']}
+        }
+
+        # Create volumes
+        vols = {
+            'active': make_volume('volTPCActive', shapes['active'], 
+                                params=[
+                                    ("auxiliary", ("SensDet", "SimEnergyDeposit")),
+                                    ("auxiliary", ("StepLimit", "0.5*cm")),
+                                    ("auxiliary", ("Efield", "500*V/cm"))
+                                ]),
+            'tpc': make_volume('volTPC', shapes['tpc']),
+            **{f'plane_{p}': make_volume(f'volTPCPlane{p}', shapes[p]) 
+               for p in ['U', 'V', 'Z']}
+        }
+
+        # Define placements
+        placements = {
+            'active': (-self.params['ReadoutPlane']/2, 0, 0),
+            'plane_U': (0.5*dims['tpc'][0] - 2.5*self.params['padWidth'], 0, 0),
+            'plane_V': (0.5*dims['tpc'][0] - 1.5*self.params['padWidth'], 0, 0),
+            'plane_Z': (0.5*dims['tpc'][0] - 0.5*self.params['padWidth'], 0, 0)
+        }
+
+        # Place all volumes
+        for name, (x, y, z) in placements.items():
+            pos = geom.structure.Position(f"pos{name}{quad}_pos", x=x, y=Q('0cm'), z=Q('0cm'))
+            place = geom.structure.Placement(f"pos{name.split('_')[-1]}{quad}", 
+                                          volume=vols[name], 
+                                          pos=pos)
+            vols['tpc'].placements.append(place.name)
+
+        return vols['tpc']
 
 
     def construct(self, geom):
@@ -175,5 +242,10 @@ class TPCBuilder(gegede.builder.Builder):
             self.params['offsetUVwire'][0],
             self.params['offsetUVwire'][1]
         )
+
+        # Construct each quadrant
+        for quad in range(4):
+            tpc_vol = self.construct_crm(geom, quad)
+            self.add_volume(tpc_vol)
 
 
