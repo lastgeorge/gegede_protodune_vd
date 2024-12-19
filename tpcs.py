@@ -9,39 +9,6 @@ import math
 from collections import namedtuple
 
 
-# def line_clip(x0: float, y0: float, nx: float, ny: float, rcl: float, rcw: float) -> list:
-#     """Line clipping algorithm for rectangular boundary.
-    
-#     Args:
-#         x0, y0: Starting point coordinates
-#         nx, ny: Direction vector components 
-#         rcl: Rectangle length
-#         rcw: Rectangle width
-        
-#     Returns:
-#         List of intersection points [x1,y1,x2,y2]
-#     """
-#     if abs(nx) < 1e-4: return [x0, 0, x0, rcw]  # Vertical line
-#     if abs(ny) < 1e-4: return [0, y0, rcl, y0]  # Horizontal line
-    
-#     # Check all edge intersections
-#     intersections = []
-#     edges = [
-#         (0, lambda x: y0 - x0 * ny/nx),           # Left edge
-#         (rcl, lambda x: y0 + (x-x0) * ny/nx),     # Right edge
-#         (x0 - y0 * nx/ny, lambda x: 0),           # Bottom edge
-#         (x0 + (rcw-y0) * nx/ny, lambda x: rcw)    # Top edge
-#     ]
-    
-#     for x, get_y in edges:
-#         y = get_y(x)
-#         if 0 <= x <= rcl and 0 <= y <= rcw:
-#             intersections.extend([x, y])
-#             if len(intersections) == 4:
-#                 break
-                
-#     return intersections
-
 def line_clip(x0, y0, nx, ny, rcl, rcw):
     tol = 1.0E-4
     endpts = []
@@ -128,8 +95,8 @@ def split_wires(wires, width, theta_deg):
     # Adjust y positions
     for winfo, y_offset in [(winfo1, -0.25), (winfo2, 0.25)]:
         for w in winfo:
-            w[5] += y_offset * width  # y1
-            w[7] += y_offset * width  # y2
+            w[5] -= y_offset * width  # y1
+            w[7] -= y_offset * width  # y2
             w[2] = 0.5 * (w[5] + w[7])  # ycenter
             
     return winfo1, winfo2
@@ -214,6 +181,8 @@ def generate_wires(length, width, nch, pitch, theta_deg, dia, w1offx, w1offy):
 
         # Store wire info
         wire = [ch, wcn[0], wcn[1], wlen] + endpts
+
+        # print(ch, wcn[0], wcn[1])
 
         winfo.append(wire)
         
@@ -313,6 +282,7 @@ class TPCBuilder(gegede.builder.Builder):
             # Create wire shapes and volumes for U plane
             if 'U' in self.wire_configs:
                 for wire in self.wire_configs['U'][quad]:
+                    print(quad, wire[0],wire[3], wire[2])
                     wid = wire[0]
                     wlen = wire[3]
                     wire_shape = geom.shapes.Tubs(
@@ -408,7 +378,6 @@ class TPCBuilder(gegede.builder.Builder):
                     rot=rot)
                 vols['plane_Z'].placements.append(place.name)
 
-        #print(self.params['padWidth'])
 
         # Define placements
         placements = {
@@ -473,17 +442,17 @@ class TPCBuilder(gegede.builder.Builder):
             # Split wires for each quadrant
             winfo_u1a, winfo_u1b = split_wires(winfo_u1, 
                                self.params['widthPCBActive'],
-                               self.params['wireAngle']['U'])
+                               self.params['wireAngle']['U'].to('deg').magnitude)
             winfo_v1a, winfo_v1b = split_wires(winfo_v1,
                                self.params['widthPCBActive'],
-                               self.params['wireAngle']['V'])
+                               self.params['wireAngle']['V'].to('deg').magnitude)
 
             winfo_u2a, winfo_u2b = split_wires(winfo_u2,
                                self.params['widthPCBActive'],
-                               self.params['wireAngle']['U'])  
+                               self.params['wireAngle']['U'].to('deg').magnitude)  
             winfo_v2a, winfo_v2b = split_wires(winfo_v2,
                                self.params['widthPCBActive'],
-                               self.params['wireAngle']['V'])
+                               self.params['wireAngle']['V'].to('deg').magnitude)
 
             # Store wire configurations for CRM construction
             self.wire_configs = {
@@ -568,8 +537,6 @@ class TPCBuilder(gegede.builder.Builder):
                         pcbOffsetZ = -(params['borderCRP']/2 - params['gapCRU']/4)
                         myposTPCY = posY + CRP_y/4 + pcbOffsetY
                         myposTPCZ = posZ + CRP_z/4 + pcbOffsetZ
-
-                # print(f'volTPC_{quad}')
 
                 # Get TPC volume for this quadrant
                 tpc_vol = self.get_volume(f'volTPC_{quad}')

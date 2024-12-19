@@ -22,7 +22,7 @@ void gl()
   TGeoNode *argon = cryo->GetDaughter(1);
 
   TEveGeoTopNode* top = new TEveGeoTopNode(gGeoManager, det);
-  //gEve->AddGlobalElement(top);
+  gEve->AddGlobalElement(top);
    int nDaughters = det->GetNdaughters();
    for (int i=0; i<nDaughters; i++) {
      TGeoNode *node = det->GetDaughter(i);
@@ -57,22 +57,22 @@ for (int i = 0; i < nDaughters; i++) {
     TGeoNode *node = argon->GetDaughter(i);
     TString name(node->GetName());
 
-    
+    // std::cout << "Node name: " << name << std::endl;
 
-    // Check for TPC volumes and draw them
-    if (name.Contains("volTPC")) {
-      cout << i << " " << name << endl;
-        special = node;
-        TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, node);
-        gEve->AddGlobalElement(eveNode);
-        break;
+    // // Check for TPC volumes and draw them
+    // if (name.Contains("volTPC_1")) {
+    //   cout << i << " " << name << endl;
+    //     special = node;
+    //     TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, node);
+    //     gEve->AddGlobalElement(eveNode);
+    //     break;
 
-        // Optional: make other volumes invisible to focus on TPCs
-        // node->GetVolume()->SetVisibility(kTRUE);
-    } else {
-        // Optional: make non-TPC volumes invisible
-        // node->SetVisibility(kFALSE);
-    }
+    //     // Optional: make other volumes invisible to focus on TPCs
+    //     // node->GetVolume()->SetVisibility(kTRUE);
+    // } else {
+    //     // Optional: make non-TPC volumes invisible
+    //     // node->SetVisibility(kFALSE);
+    // }
 
     // Keep existing Cathode Arapuca handling
     if (name.Contains("volCathodeArapucaMesh")) {
@@ -99,8 +99,8 @@ for (int i = 0; i < nDaughters; i++) {
             daughter->SetVisibility(kTRUE);  // Ensure each daughter is visible
 
             // Draw each daughter node separately
-            // TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, daughter);
-            // gEve->AddGlobalElement(eveNode);
+            TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, daughter);
+            gEve->AddGlobalElement(eveNode);
         }
 
         // Optionally print information for verification
@@ -108,7 +108,7 @@ for (int i = 0; i < nDaughters; i++) {
     }
 }
 
-//argon->Draw("ogl");
+argon->Draw("ogl");
 // special->Draw("ogl");
 
 // Redraw the scene to apply changes
