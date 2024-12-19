@@ -284,8 +284,12 @@ class CRTBuilder(gegede.builder.Builder):
             
             # Create volumes
             top_paddle_vol = create_paddle_volume("volAuxDetSensitiveCRTDPPaddleTop", shapes['top_paddle'])
+            top_paddle_vol.params.append(("SensDet","AuxDet"))
+            top_paddle_vol.params.append(("Solid","True"))
             bottom_paddle_vol = create_paddle_volume("volAuxDetSensitiveCRTDPPaddleBottom", shapes['bottom_paddle'])
-            
+            bottom_paddle_vol.params.append(("SensDet","AuxDet"))
+            bottom_paddle_vol.params.append(("Solid","True"))
+
             def build_dp_module(is_top):
                 """Build a DP CRT module (top or bottom)"""
                 prefix = "Top" if is_top else "Bottom"

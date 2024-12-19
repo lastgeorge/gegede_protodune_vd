@@ -282,7 +282,7 @@ class TPCBuilder(gegede.builder.Builder):
             # Create wire shapes and volumes for U plane
             if 'U' in self.wire_configs:
                 for wire in self.wire_configs['U'][quad]:
-                    print(quad, wire[0],wire[3], wire[2])
+                    # print(quad, wire[0],wire[3], wire[2])
                     wid = wire[0]
                     wlen = wire[3]
                     wire_shape = geom.shapes.Tubs(

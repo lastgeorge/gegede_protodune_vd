@@ -219,6 +219,9 @@ class CryostatBuilder(gegede.builder.Builder):
         cryo_vol.placements.append(steel_place.name)
         cryo_vol.placements.append(argon_place.name)
         argon_vol.placements.append(gas_ar_place.name)
+        argon_vol.params.append(("SensDet", "SimEnergyDeposit"))
+        argon_vol.params.append(("StepLimit", "0.47625*cm"))
+        argon_vol.params.append(("Efield", "0*V/cm"))
 
         xarapuca_builder = self.get_builder('xarapuca')
 

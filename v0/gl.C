@@ -6,114 +6,225 @@
 #include "TGeoVolume.h"
 #include "TGeoMedium.h"
 
-void gl()
-{
-  gSystem->IgnoreSignal(kSigSegmentationViolation, true);
-  TEveManager::Create();
-  // TGeoManager::Import("lbne35t4apa.gdml");
-  //TGeoManager::Import("lbne35t4apa_v3_nowires.gdml");
-  // TGeoManager::Import("lbne35t4apa_v3.gdml");
-  TGeoManager::Import("protodunevd_v4_refactored.gdml");
+// Add global flag
+static bool gVolumeAdded = false;
+static bool gPrint = true; 
+static int gPrintLevel = 8;
 
+// Add these static variables for tracking
+static TString gPreviousName = "";
+static int gNameCounter = 0;
 
+// Add these after other static variables
+static std::vector<TString> gInvisiblePatterns;
 
-  TGeoNode* world = gGeoManager->GetTopNode();
+// Add these global variables after other static variables
+static TGeoNode* gSpecialNode = nullptr;
+static bool gSpecialNodeFound = false;
 
-  TGeoNode *det = world->GetDaughter(0);
-  TGeoNode *cryo = det->GetDaughter(11);
+// Update VolumeInfo structure
+struct VolumeInfo {
+    TString name;
+    int depth;
+    TString parentName;
+    TString materialName;
+    int count;
+    VolumeInfo(const TString& n, int d, const TString& p, const TString& m) : 
+        name(n), depth(d), parentName(p), materialName(m), count(1) {}
+};
 
-  TEveGeoTopNode* top = new TEveGeoTopNode(gGeoManager, det);
-  // gEve->AddGlobalElement(top);
-  int nDaughters = world->GetNdaughters();
-  // for (int i=0; i<nDaughters; i++) {
-  //     TGeoNode *node = det->GetDaughter(i);
-  //     TString name(node->GetName());
-  //     cout << i << " " << name << endl;
-  //     // if (name.Contains("Foam") || name.Contains("Steel") 
-  //     //     || name.Contains("Concrete") || name.Contains("Neck")) {
-  //     //   node->SetInvisible();
-  //     //   node->SetAllInvisible();
-  //     // }
-  //   }
+// Add these global variables
+static std::map<TString, VolumeInfo> gVolumeInfoMap;
 
-  // nDaughters = cryo->GetNdaughters();
-  // for (int i=0; i<nDaughters; i++) {
-  //   TGeoNode *node = cryo->GetDaughter(i);
-  //   TString name(node->GetName());
-  //   //  cout << i << " " << name << endl;
-  //    if (name.Contains("argon") || name.Contains("cryostat_steel")) {
-  //      node->SetInvisible();
-  //      //node->SetAllInvisible();
-  //    } 
-  // //       || name.Contains("Concrete") || name.Contains("Argon")) {
-  // //     node->SetInvisible();
-  // //     node->SetAllInvisible();
-  // //   }
-  //  }
+// Add after other static variables
+struct NameMapping {
+    TString pattern;
+    TString mappedName;
+    NameMapping(const TString& p, const TString& m) : pattern(p), mappedName(m) {}
+};
 
-TGeoNode *special = 0;
+static std::vector<NameMapping> gNameMappings;
 
-nDaughters = cryo->GetNdaughters();
-for (int i = 0; i < nDaughters; i++) {
-    TGeoNode *node = cryo->GetDaughter(i);
-    TString name(node->GetName());
-
-    std::cout << "Node name: " << name << std::endl;
-
-    // Check for TPC volumes and draw them
-    if (name.Contains("volTPC0_0")) {
-      cout << i << " " << name << endl;
-        special = node;
-        TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, node);
-        gEve->AddGlobalElement(eveNode);
-        break;
-
-        // Optional: make other volumes invisible to focus on TPCs
-        // node->GetVolume()->SetVisibility(kTRUE);
-    } else {
-        // Optional: make non-TPC volumes invisible
-        // node->SetVisibility(kFALSE);
+// Update printVolumeSummary function
+void printVolumeSummary() {
+    std::map<int, std::vector<VolumeInfo>> depthMap;
+    
+    // Group by depth
+    for (const auto& pair : gVolumeInfoMap) {
+        depthMap[pair.second.depth].push_back(pair.second);
     }
-
-    // Keep existing Cathode Arapuca handling
-    // if (name.Contains("volCathodeArapucaMesh")) {
-    //     node->SetVisibility(kFALSE);  // Hide the parent node
-
-    //     // int nChildren = node->GetNdaughters();
-    //     // std::cout << "Number of daughters: " << nChildren << std::endl;
-
-    //     // if (nChildren == 0) {
-    //     //     std::cout << "No daughters found for volCathodeArapucaMesh" << std::endl;
-    //     // }
-
-    //     // Loop through the daughters and make them visible
-    //     for (Int_t j = 0; j < node->GetNdaughters(); j++) {
-    //         TGeoNode* daughter = node->GetDaughter(j);
-
-    //         // Print volume information of the daughter node
-    //         // if (daughter->GetVolume()) {
-    //         //     daughter->GetVolume()->Print();
-    //         // } else {
-    //         //     std::cout << "Daughter volume is NULL" << std::endl;
-    //         // }
-
-    //         daughter->SetVisibility(kTRUE);  // Ensure each daughter is visible
-
-    //         // Draw each daughter node separately
-    //         // TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, daughter);
-    //         // gEve->AddGlobalElement(eveNode);
-    //     }
-
-    //     // Optionally print information for verification
-    //    // node->GetVolume()->Print();
-    // }
+    
+    // Print by depth level
+    for (const auto& depthPair : depthMap) {
+        cout << "\n=== Depth Level " << depthPair.first << " ===" << endl;
+        for (const auto& info : depthPair.second) {
+            cout << "Volume: " << info.name;
+            if (info.count > 1) {
+                cout << " (x" << info.count << ")";
+            }
+            cout << "\n\tParent: " << info.parentName
+                 << "\n\tMaterial: " << info.materialName << endl;
+        }
+    }
 }
 
-//argon->Draw("ogl");
-// special->Draw("ogl");
+// Add this helper function before traverseNode
+bool shouldBeInvisible(const TString& name) {
+    for (const auto& pattern : gInvisiblePatterns) {
+        if (name.Contains(pattern)) return true;
+    }
+    return false;
+}
 
-// Redraw the scene to apply changes
-gEve->Redraw3D(kTRUE);
-//gEve->GetDefaultGLViewer()->ResetCameras();
+// Add this helper function before traverseNode
+TString getMappedName(const TString& originalName) {
+    for (const auto& mapping : gNameMappings) {
+        if (originalName.Contains(mapping.pattern)) {
+            return mapping.mappedName;
+        }
+    }
+    return originalName;  // Return original if no mapping found
+}
 
+// Modified traversal function with target parameter
+void traverseNode(TGeoNode* node, const TString& targetVolume, const TString& specialVolume, int depth = 0) {
+    if (!node) return;
+    
+    TString originalName(node->GetName());
+    TString mappedName = getMappedName(originalName);
+    TString parentName = node->GetMotherVolume() ? 
+                        getMappedName(node->GetMotherVolume()->GetName()) : 
+                        "none";
+    
+    // Get material information
+    TString materialName = "unknown";
+    if (node->GetVolume() && node->GetVolume()->GetMaterial()) {
+        materialName = node->GetVolume()->GetMaterial()->GetName();
+    }
+    
+    // Store volume information with mapped name and material
+    if (depth <= gPrintLevel && gPrint) {
+        auto it = gVolumeInfoMap.find(mappedName);
+        if (it != gVolumeInfoMap.end()) {
+            it->second.count++;
+        } else {
+            gVolumeInfoMap.emplace(mappedName, VolumeInfo(mappedName, depth, parentName, materialName));
+        }
+    }
+    
+    // Use original name for other checks
+    if (!gSpecialNodeFound && originalName.Contains(specialVolume)) {
+        gSpecialNode = node;
+        gSpecialNodeFound = true;
+        //return;  // Stop traversing once special node is found
+    }
+
+    // Check and set invisibility
+    if (shouldBeInvisible(originalName)) {
+        node->SetInvisible();
+       //node->SetAllInvisible();
+    }
+        
+    // Check if this is our target volume
+    if (originalName.Contains(targetVolume) && !gVolumeAdded ) {
+        TEveGeoTopNode* top = new TEveGeoTopNode(gGeoManager, node);
+        gEve->AddGlobalElement(top);
+        gVolumeAdded = true;
+        //return;  // Stop traversing this branch once found
+    }
+
+    // Continue traversing if target not found
+    int nDaughters = node->GetNdaughters();
+    for (int i = 0; i < nDaughters; i++) {
+        TGeoNode* daughter = node->GetDaughter(i);
+        traverseNode(daughter, targetVolume, specialVolume, depth + 1);
+    }
+}
+
+void gl()
+{
+    gSystem->IgnoreSignal(kSigSegmentationViolation, true);
+    TEveManager::Create();
+    // TGeoManager::Import("lbne35t4apa.gdml");
+    // TGeoManager::Import("lbne35t4apa_v3_nowires.gdml");
+    // TGeoManager::Import("lbne35t4apa_v3.gdml");
+    TGeoManager::Import("protodunevd_v4_refactored.gdml");
+
+    TGeoNode* world = gGeoManager->GetTopNode();
+    
+    // Define target volume name to be printed by the main gEve ...
+    //TString targetVolume = "volTPC_1";  // Change this to your desired volume name
+    //TString targetVolume = "cryostat_argon_volum";
+    TString targetVolume = "detenclosure";
+
+    // Define special volume to draw with ogl
+    TString specialVolume = "volTPC_1";  // Change this to your desired special volume
+
+    // Initialize invisible patterns
+    gInvisiblePatterns = {
+        "Foam",
+        "Steel",
+        "Concrete",
+        "cryostat_steel",
+        "argon"  // Add any other patterns you want
+    };
+
+    // Initialize name mappings
+    gNameMappings = {
+        NameMapping("volTPCWireV", "TPC_Wire_V"),
+        NameMapping("volTPCWireU", "TPC_Wire_U"),
+        NameMapping("volArapucaDouble_","volArapucaDouble"),
+        NameMapping("volUnitWSW_","volUnitSteel"),
+        NameMapping("volUnitWSS_","volUnitSteel"),
+        NameMapping("volUnitWSCent_","volUnitSteel"),
+        NameMapping("volUnitLRCent_","volUnitSteel"),
+        NameMapping("volUnitLRE_","volUnitSteel"),
+        NameMapping("volUnitLRN_","volUnitSteel"),
+        NameMapping("volUnitUSW_","volUnitSteel"),
+        NameMapping("volUnitWSE_","volUnitSteel"),
+        NameMapping("volUnitWSN_","volUnitSteel"),
+        NameMapping("volUnitUSS_","volUnitSteel"),
+        NameMapping("volUnitUSN_","volUnitSteel"),
+        NameMapping("volUnitUSE_","volUnitSteel"),
+        NameMapping("volUnitUSCent_","volUnitSteel"),
+        NameMapping("volUnitTBS_","volUnitSteel"),
+        NameMapping("volUnitTBW_","volUnitSteel"),
+        NameMapping("volUnitLRS_","volUnitSteel"),
+        NameMapping("volUnitLRW_",  "volUnitSteel"),
+        NameMapping("volUnitTBCent_","volUnitSteel"),
+        NameMapping("volUnitTBE_" ,"volUnitSteel"),
+        NameMapping("volUnitTBN_","volUnitSteel"),
+        NameMapping("volOpDetSensitive_ArapucaLat_","volOpDetSensitive_ArapucaLat"),
+        NameMapping("volOpDetSensitive_ArapucaDouble_","volOpDetSensitive_ArapucaDouble"),
+        NameMapping("volArapucaLat_","volArapucaLat"),
+        //NameMapping("volTPC_", "TPC"),
+        //NameMapping("volCathodeArapucaMeshRod_","volCathodeArapucaMeshRod")
+        // Add more mappings as needed
+    };
+
+    // Reset all flags and pointers
+    gSpecialNode = nullptr;
+    gSpecialNodeFound = false;
+    gVolumeAdded = false;
+    gPreviousName = "";
+    gNameCounter = 0;
+    
+    // Clear volume info map before starting
+    gVolumeInfoMap.clear();
+    
+    // Search for volumes
+    traverseNode(world, targetVolume, specialVolume);
+    
+    // Print volume summary
+    if (gPrint) {
+        printVolumeSummary();
+    }
+    
+    // Draw special volume if found
+    if (gSpecialNode) {
+        gSpecialNode->Draw("ogl");
+    }
+    
+    // Redraw the scene
+    gEve->Redraw3D(kTRUE);
 }
