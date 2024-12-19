@@ -272,4 +272,30 @@ class CryostatBuilder(gegede.builder.Builder):
         pmt_builder = self.get_builder('pmts')
         pmt_builder.place_pmts(geom, argon_vol)
 
+        # Get TPC builder and place TPCs
+        tpc_builder = self.get_builder('tpcs')
+        if tpc_builder:
+            # Create dictionary of placement parameters
+            placement_params = {
+                'HeightGaseousAr': self.cryo['HeightGaseousAr'],
+                'Upper_xLArBuffer': self.cryo['Upper_xLArBuffer'], 
+                'driftTPCActive': self.tpc['driftTPCActive'],
+                'ReadoutPlane': self.tpc['ReadoutPlane'],
+                'heightCathode': self.cathode['heightCathode'],
+                'borderCRP': self.tpc['borderCRP'],
+                'gapCRU': self.tpc['gapCRU'],
+                'widthCRP': self.tpc['widthCRP'],
+                'lengthCRP': self.tpc['lengthCRP'],
+                'yLArBuffer': self.cryo['yLArBuffer'],
+                'zLArBuffer': self.cryo['zLArBuffer'],
+                'nCRM_z': self.tpc['nCRM_z'],
+                'nCRM_x': self.tpc['nCRM_x']
+            }
+
+            # Call placement function with argon volume dimensions
+            argon_dim = (self.cryo['Argon_x'], 
+                        self.cryo['Argon_y'],
+                        self.cryo['Argon_z'])
+            tpc_builder.place_tpcs(geom, argon_vol, argon_dim, placement_params)
+
         self.add_volume(cryo_vol)

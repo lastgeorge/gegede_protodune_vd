@@ -44,8 +44,7 @@ def line_clip(x0: float, y0: float, nx: float, ny: float, rcl: float, rcw: float
 
 
 def split_wires(wires, width, theta_deg):
-    """
-    Split wires at y=0 line into two halves.
+    """Split wires at y=0 line into two halves.
     
     Args:
         wires: List of wire info
@@ -55,86 +54,47 @@ def split_wires(wires, width, theta_deg):
     Returns:
         Tuple of (lower_wires, upper_wires)
     """
-    yref = 0
+    def make_wire(ich, endpts, wire_len=None):
+        """Helper to create a wire with calculated center and length"""
+        wcn = [(endpts[0] + endpts[2])/2, (endpts[1] + endpts[3])/2]
+        if wire_len is None:
+            dx, dy = endpts[0] - endpts[2], endpts[1] - endpts[3]
+            wire_len = (dx*dx + dy*dy)**0.5
+        return [ich] + wcn + [wire_len] + endpts
+
     theta = math.radians(theta_deg)
-    nx = math.cos(theta)
-    ny = math.sin(theta)
-    
-    winfo1 = [] # Lower half
-    winfo2 = [] # Upper half
-    ich1 = 0
-    ich2 = 0
+    nx, ny = math.cos(theta), math.sin(theta)
+    winfo1, winfo2 = [], []  # Lower and upper halves
+    ich1 = ich2 = 0
     
     for wire in wires:
-        x0 = wire[1]
-        y0 = wire[2] 
         endpts = wire[4:8]
+        y1, y2 = min(endpts[1], endpts[3]), max(endpts[1], endpts[3])
         
-        # Find max/min y values
-        y1 = min(endpts[1], endpts[3])
-        y2 = max(endpts[1], endpts[3])
-        
-        # Wire fully in lower half
-        if y2 < yref:
-            wire1 = [ich1, x0, y0, wire[3]] + endpts
-            winfo1.append(wire1)
+        if y2 < 0:  # Wire fully in lower half
+            winfo1.append(make_wire(ich1, endpts, wire[3]))
             ich1 += 1
-            continue
-            
-        # Wire fully in upper half    
-        if y1 > yref:
-            wire2 = [ich2, x0, y0, wire[3]] + endpts
-            winfo2.append(wire2)
+        elif y1 > 0:  # Wire fully in upper half
+            winfo2.append(make_wire(ich2, endpts, wire[3]))
             ich2 += 1
-            continue
-        
-        # Wire crosses yref - calculate intersection
-        x = x0 + (yref - y0) * nx/ny
-        
-        # Split into two wires
-        endpts1 = list(endpts)
-        endpts2 = list(endpts)
-        
-        if endpts[1] < yref:
-            endpts1[2] = x
-            endpts1[3] = yref
-            endpts2[0] = x
-            endpts2[1] = yref
-        else:
-            endpts1[0] = x
-            endpts1[1] = yref
-            endpts2[2] = x
-            endpts2[3] = yref
+        else:  # Wire crosses y=0
+            x = wire[1] + (-wire[2]) * nx/ny  # Intersection point
             
-        # Create new wires with adjusted centers
-        wcn1 = [(endpts1[0] + endpts1[2])/2,
-                (endpts1[1] + endpts1[3])/2]
-        dx = endpts1[0] - endpts1[2]
-        dy = endpts1[1] - endpts1[3]
-        wlen1 = (dx*dx + dy*dy)**(0.5)
-        wire1 = [ich1] + wcn1 + [wlen1] + endpts1
-        winfo1.append(wire1)
-        ich1 += 1
-        
-        wcn2 = [(endpts2[0] + endpts2[2])/2,
-                (endpts2[1] + endpts2[3])/2] 
-        dx = endpts2[0] - endpts2[2]
-        dy = endpts2[1] - endpts2[3]
-        wlen2 = (dx*dx + dy*dy)**(0.5)
-        wire2 = [ich2] + wcn2 + [wlen2] + endpts2
-        winfo2.append(wire2)
-        ich2 += 1
-        
-    # Adjust y positions relative to width
-    for w in winfo1:
-        w[5] += -0.25 * width  # y1
-        w[7] += -0.25 * width  # y2
-        w[2] = 0.5 * (w[5] + w[7])  # ycenter
-        
-    for w in winfo2:
-        w[5] += 0.25 * width  # y1
-        w[7] += 0.25 * width  # y2
-        w[2] = 0.5 * (w[5] + w[7])  # ycenter
+            # Split endpoints at intersection
+            endpts1 = endpts[:2] + [x, 0] if endpts[1] < 0 else [x, 0] + endpts[2:]
+            endpts2 = [x, 0] + endpts[2:] if endpts[1] < 0 else endpts[:2] + [x, 0]
+            
+            winfo1.append(make_wire(ich1, endpts1))
+            winfo2.append(make_wire(ich2, endpts2))
+            ich1 += 1
+            ich2 += 1
+
+    # Adjust y positions
+    for winfo, y_offset in [(winfo1, -0.25), (winfo2, 0.25)]:
+        for w in winfo:
+            w[5] += y_offset * width  # y1
+            w[7] += y_offset * width  # y2
+            w[2] = 0.5 * (w[5] + w[7])  # ycenter
             
     return winfo1, winfo2
 
@@ -145,26 +105,17 @@ def flip_wires(wires):
         wires: Input wire configurations
         
     Returns:
-        list: Flipped wire configurations
+        list: Flipped wire configurations with negated x,y coordinates
     """
-    winfo = []
-    for wire in wires:
-        # Flip endpoints
-        xn1 = -wire[4]  # -x1
-        yn1 = -wire[5]  # -y1
-        xn2 = -wire[6]  # -x2  
-        yn2 = -wire[7]  # -y2
-
-        # New center
-        xc = 0.5*(xn1 + xn2)
-        yc = 0.5*(yn1 + yn2)
-
-        # Create flipped wire config
-        new_wire = [wire[0], xc, yc, wire[3],
-                    xn1, yn1, xn2, yn2]
-        winfo.append(new_wire)
-
-    return winfo
+    return [
+        [wire[0],                    # Keep channel number
+         -0.5*(wire[4] + wire[6]),  # Flip x center
+         -0.5*(wire[5] + wire[7]),  # Flip y center
+         wire[3],                    # Keep wire length
+         -wire[4], -wire[5],        # Flip endpoint 1
+         -wire[6], -wire[7]]        # Flip endpoint 2
+        for wire in wires
+    ]
 
 def generate_wires(length, width, nch, pitch, theta_deg, dia, w1offx, w1offy):
     """
@@ -263,8 +214,6 @@ class TPCBuilder(gegede.builder.Builder):
 
         self.print_construct = print_construct
 
-
-
         self._configured = True
 
 
@@ -277,7 +226,11 @@ class TPCBuilder(gegede.builder.Builder):
         
         def make_volume(name, shape, material="LAr", **params):
             """Create a volume with given shape and parameters"""
-            return geom.structure.Volume(f"{name}_{quad}", material=material, shape=shape, **params)
+            vol = geom.structure.Volume(f"{name}_{quad}", material=material, shape=shape)
+            if params.get('params'):
+                for param_type, param_value in params['params']:
+                    vol.params.append((param_type, param_value))
+            return vol
 
         # Calculate dimensions
         dims = {
@@ -308,16 +261,115 @@ class TPCBuilder(gegede.builder.Builder):
 
         # Create volumes
         vols = {
-            'active': make_volume('volTPCActive', shapes['active'], 
-                                params=[
-                                    ("auxiliary", ("SensDet", "SimEnergyDeposit")),
-                                    ("auxiliary", ("StepLimit", "0.5*cm")),
-                                    ("auxiliary", ("Efield", "500*V/cm"))
-                                ]),
+            'active': make_volume('volTPCActive', shapes['active']),
             'tpc': make_volume('volTPC', shapes['tpc']),
             **{f'plane_{p}': make_volume(f'volTPCPlane{p}', shapes[p]) 
                for p in ['U', 'V', 'Z']}
         }
+        vols['tpc'].params.append(("SensDet","SimEnergyDeposit"))
+        vols['tpc'].params.append(("StepLimit","0.5*cm"))
+        vols['tpc'].params.append(("Efield","500*V/cm"))
+
+
+        # If wires are enabled
+        if hasattr(self, 'wire_configs'):
+            # Create wire shapes and volumes for U plane
+            if 'U' in self.wire_configs:
+                for wire in self.wire_configs['U'][quad]:
+                    wid = wire[0]
+                    wlen = wire[3]
+                    wire_shape = geom.shapes.Tubs(
+                        f"CRMWireU{wid}_{quad}",
+                        rmax=self.params['padWidth']/2,
+                        dz=wlen/2.,
+                        sphi="0deg",
+                        dphi="360deg")
+                    wire_vol = geom.structure.Volume(
+                        f"volTPCWireU{wid}_{quad}",
+                        material="Copper_Beryllium_alloy25",
+                        shape=wire_shape)
+                    # Place wire in U plane
+                    pos = geom.structure.Position(
+                        f"posWireU{wid}_{quad}",
+                        x=Q("0cm"),
+                        y=wire[2],  # ycenter
+                        z=wire[1])  # xcenter
+                    rot = "rUWireAboutX"
+                    place = geom.structure.Placement(
+                        f"placeWireU{wid}_{quad}",
+                        volume=wire_vol,
+                        pos=pos,
+                        rot=rot)
+                    vols['plane_U'].placements.append(place.name)
+
+            # Create wire shapes and volumes for V plane  
+            if 'V' in self.wire_configs:
+                for wire in self.wire_configs['V'][quad]:
+                    wid = wire[0]
+                    wlen = wire[3]
+                    wire_shape = geom.shapes.Tubs(
+                        f"CRMWireV{wid}_{quad}",
+                        rmax=self.params['padWidth']/2,
+                        dz=wlen/2.,
+                        sphi="0deg",
+                        dphi="360deg")
+                    wire_vol = geom.structure.Volume(
+                        f"volTPCWireV{wid}_{quad}",
+                        material="Copper_Beryllium_alloy25",
+                        shape=wire_shape)
+                    # Place wire in V plane
+                    pos = geom.structure.Position(
+                        f"posWireV{wid}_{quad}",
+                        x=Q("0cm"),
+                        y=wire[2],  # ycenter 
+                        z=wire[1])  # xcenter
+                    rot = "rVWireAboutX"
+                    place = geom.structure.Placement(
+                        f"placeWireV{wid}_{quad}",
+                        volume=wire_vol,
+                        pos=pos,
+                        rot=rot)
+                    vols['plane_V'].placements.append(place.name)
+
+            # Create and place Z wires
+            nch = self.params['nChans']['Col']//2
+            zdelta = self.params['lengthPCBActive'] - self.params['wirePitch']['Z'] * nch
+            if zdelta < 0:
+                print("Warning: Z delta should be positive or 0")
+                zdelta = 0
+
+            zoffset = zdelta if quad <= 1 else 0
+            
+            wire_shape_z = geom.shapes.Tubs(
+                f"CRMWireZ{quad}",
+                rmax=self.params['padWidth']/2,
+                dz=dims['plane'][1]/2.,  # Half width
+                sphi="0deg",
+                dphi="360deg")
+            wire_vol_z = geom.structure.Volume(
+                f"volTPCWireZ{quad}",
+                material="Copper_Beryllium_alloy25", 
+                shape=wire_shape_z)
+
+            # Place Z wires
+            for i in range(nch):
+                zpos = zoffset + (i + 0.5) * self.params['wirePitch']['Z'] - 0.5 * self.params['lengthPCBActive']
+                if abs(0.5 * self.params['lengthPCBActive'] - abs(zpos)) < 0:
+                    raise ValueError(f"Cannot place wire {i} in view Z, plane too small")
+                    
+                wid = i + quad * nch
+                pos = geom.structure.Position(
+                    f"posWireZ{wid}_{quad}",
+                    x=Q("0cm"),
+                    y=Q("0cm"),
+                    z=zpos)
+                rot = "rPlus90AboutX"
+                place = geom.structure.Placement(
+                    f"placeWireZ{wid}_{quad}",
+                    volume=wire_vol_z,
+                    pos=pos,
+                    rot=rot)
+                vols['plane_Z'].placements.append(place.name)
 
         # Define placements
         placements = {
@@ -334,6 +386,8 @@ class TPCBuilder(gegede.builder.Builder):
                                           volume=vols[name], 
                                           pos=pos)
             vols['tpc'].placements.append(place.name)
+
+        # print(vols['tpc'].name)
 
         return vols['tpc']
 
@@ -398,9 +452,9 @@ class TPCBuilder(gegede.builder.Builder):
                 'V': [winfo_v1a, winfo_v1b, winfo_v2a, winfo_v2b]
             }
 
-            # Construct CRM volumes with wire configurations
-            for quad in range(4):
-                self.construct_crm(geom, quad)
+        # Construct CRM volumes with wire configurations
+        for quad in range(4):
+            self.add_volume(self.construct_crm(geom, quad))
 
 
     def construct(self, geom):
@@ -412,32 +466,102 @@ class TPCBuilder(gegede.builder.Builder):
         # Build top CRP
         self.construct_top_crp(geom)
 
-        # # This creates full CRU planes that will be split later
-        # self.wire_planes['U'] = generate_wires(
-        #     self.params['lengthPCBActive'],
-        #     self.params['widthPCBActive'], 
-        #     self.params['nChans']['Ind1'],
-        #     self.params['wirePitch']['U'],
-        #     self.params['wireAngle']['U'].to('deg').magnitude,
-        #     self.params['padWidth'],
-        #     self.params['offsetUVwire'][0],
-        #     self.params['offsetUVwire'][1]
-        # )
         
-        # self.wire_planes['V'] = generate_wires(
-        #     self.params['lengthPCBActive'],
-        #     self.params['widthPCBActive'],
-        #     self.params['nChans']['Ind2'],
-        #     self.params['wirePitch']['V'],
-        #     self.params['wireAngle']['V'].to('deg').magnitude, 
-        #     self.params['padWidth'],
-        #     self.params['offsetUVwire'][0],
-        #     self.params['offsetUVwire'][1]
-        # )
+    def place_tpcs(self, geom, cryo_vol, argon_dim, params):
+        '''Place TPC volumes in cryostat
+        
+        Args:
+            geom: Geometry object
+            cryo_vol: Volume to place TPCs in 
+            argon_dim: Tuple of LAr dimensions (x,y,z)
+            params: Dictionary of relevant parameters
+        '''
+        # Calculate base positions for top/bottom TPCs
+        posX = argon_dim[0]/2 - params['HeightGaseousAr'] - params['Upper_xLArBuffer'] - \
+               0.5*(params['driftTPCActive'] + params['ReadoutPlane'])
+        posXBot = posX - params['driftTPCActive'] - params['heightCathode'] - params['ReadoutPlane']
 
-        # # Construct each quadrant
-        # for quad in range(4):
-        #     tpc_vol = self.construct_crm(geom, quad)
-        #     self.add_volume(tpc_vol)
+        CRP_y = params['widthCRP'] 
+        CRP_z = params['lengthCRP']
+        
+        # Start from front of detector
+        posZ = -0.5*argon_dim[2] + params['zLArBuffer'] + 0.5*CRP_z
 
+        # Loop over CRM rows and columns
+        idx = 0
+        for ii in range(params['nCRM_z']):
+            # Increment Z position every 2 rows
+            if ii % 2 == 0 and ii > 0:
+                posZ += CRP_z
+                
+            # Start from left side
+            posY = -0.5*argon_dim[1] + params['yLArBuffer'] + 0.5*CRP_y
 
+            for jj in range(params['nCRM_x']):
+                # Increment Y position every 2 columns  
+                if jj % 2 == 0 and jj > 0:
+                    posY += CRP_y
+                
+                # Calculate quadrant and offsets
+                if ii % 2 == 0:
+                    if jj % 2 == 0:
+                        quad = 0
+                        pcbOffsetY = params['borderCRP']/2
+                        pcbOffsetZ = params['borderCRP']/2 - params['gapCRU']/4
+                        myposTPCY = posY - CRP_y/4 + pcbOffsetY
+                        myposTPCZ = posZ - CRP_z/4 + pcbOffsetZ
+                    else:
+                        quad = 1
+                        pcbOffsetY = -params['borderCRP']/2
+                        pcbOffsetZ = params['borderCRP']/2 - params['gapCRU']/4
+                        myposTPCY = posY + CRP_y/4 + pcbOffsetY  
+                        myposTPCZ = posZ - CRP_z/4 + pcbOffsetZ
+                else:
+                    if jj % 2 == 0:
+                        quad = 2
+                        pcbOffsetY = params['borderCRP']/2
+                        pcbOffsetZ = -(params['borderCRP']/2 - params['gapCRU']/4)
+                        myposTPCY = posY - CRP_y/4 + pcbOffsetY
+                        myposTPCZ = posZ + CRP_z/4 + pcbOffsetZ
+                    else:
+                        quad = 3
+                        pcbOffsetY = -params['borderCRP']/2 
+                        pcbOffsetZ = -(params['borderCRP']/2 - params['gapCRU']/4)
+                        myposTPCY = posY + CRP_y/4 + pcbOffsetY
+                        myposTPCZ = posZ + CRP_z/4 + pcbOffsetZ
+
+                # print(f'volTP_{quad}')
+
+                # Get TPC volume for this quadrant
+                tpc_vol = self.get_volume(f'volTPC_{quad}')
+
+                # Place top TPC
+                pos_top = geom.structure.Position(
+                    f"posTopTPC_{idx}",
+                    x=posX,
+                    y=myposTPCY, 
+                    z=myposTPCZ
+                )
+                place_top = geom.structure.Placement(
+                    f"placeTopTPC_{idx}",
+                    volume=tpc_vol,
+                    pos=pos_top
+                )
+                cryo_vol.placements.append(place_top.name)
+
+                # Place bottom TPC
+                pos_bot = geom.structure.Position(
+                    f"posBotTPC_{idx}",
+                    x=posXBot,
+                    y=myposTPCY,
+                    z=myposTPCZ 
+                )
+                place_bot = geom.structure.Placement(
+                    f"placeBotTPC_{idx}",
+                    volume=tpc_vol,
+                    pos=pos_bot,
+                    rot='rPlus180AboutY'  # Rotate bottom TPC
+                )
+                cryo_vol.placements.append(place_bot.name)
+
+                idx += 1

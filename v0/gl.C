@@ -13,7 +13,8 @@ void gl()
   // TGeoManager::Import("lbne35t4apa.gdml");
   //TGeoManager::Import("lbne35t4apa_v3_nowires.gdml");
   // TGeoManager::Import("lbne35t4apa_v3.gdml");
-  TGeoManager::Import("protodunevd_v4_refactored_nowires.gdml");
+  // TGeoManager::Import("protodunevd_v4_refactored_nowires.gdml");
+ TGeoManager::Import("pd_vd_crt.gdml");
 
   TGeoNode* world = gGeoManager->GetTopNode();
 

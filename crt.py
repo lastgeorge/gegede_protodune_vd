@@ -145,10 +145,10 @@ class CRTBuilder(gegede.builder.Builder):
         for base, z_pos, mods, rot, idx in ds_configs:
             x = (self.steel['posCryoInDetEnc']['x'] + self.crt['CRTSurveyOrigin_x'] + 
                  self.crt[f'CRT_{base}_x'] + 
-                 mods[0] * (self.crt['ModuleLongCorr'] if abs(mods[0]) == 1 else self.crt['ModuleSMDist']))
+                 mods[0] * (self.crt['ModuleLongCorr'] if idx % 4 in [2, 3] else self.crt['ModuleSMDist']))
             y = (self.steel['posCryoInDetEnc']['y'] + self.crt['CRTSurveyOrigin_y'] + 
                  self.crt[f'CRT_{base}_y'] + 
-                 mods[1] * (self.crt['ModuleLongCorr'] if abs(mods[1]) == 1 else self.crt['ModuleSMDist']))
+                 mods[1] * (self.crt['ModuleLongCorr'] if idx % 4 in [0, 1] else self.crt['ModuleSMDist']))
             z = (self.crt['CRTSurveyOrigin_z'] + 
                  self.crt[f'CRT_{z_pos}_z'] + 
                  mods[2] * self.crt['ModuleOff_z'])
@@ -159,10 +159,10 @@ class CRTBuilder(gegede.builder.Builder):
         for base, z_pos, mods, rot, idx in us_configs:
             x = (self.steel['posCryoInDetEnc']['x'] + self.crt['CRTSurveyOrigin_x'] + 
                  self.crt[f'CRT_{base}_x'] + 
-                 mods[0] * (self.crt['ModuleLongCorr'] if abs(mods[0]) == 1 else self.crt['ModuleSMDist']))
+                 mods[0] * (self.crt['ModuleLongCorr'] if idx % 4 in [2, 3] else self.crt['ModuleSMDist']))
             y = (self.steel['posCryoInDetEnc']['y'] + self.crt['CRTSurveyOrigin_y'] + 
                  self.crt[f'CRT_{base}_y'] + 
-                 mods[1] * (self.crt['ModuleLongCorr'] if abs(mods[1]) == 1 else self.crt['ModuleSMDist']))
+                 mods[1] * (self.crt['ModuleLongCorr'] if idx % 4 in [0, 1] else self.crt['ModuleSMDist']))
             z = (self.crt['CRTSurveyOrigin_z'] + 
                  self.crt[f'CRT_{z_pos}_z'] + 
                  mods[2] * self.crt['ModuleOff_z'])
