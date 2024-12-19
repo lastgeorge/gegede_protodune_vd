@@ -388,6 +388,10 @@ class WorldBuilder(gegede.builder.Builder):
             'rot05': geom.structure.Rotation(
                 'rot05',
                 x='180deg', y='90deg', z='0deg'
+            ),
+            'identity': geom.structure.Rotation(
+                'identity',
+                x='0deg', y='0deg', z='0deg'
             )
             # and wire angle rotations (rUWireAboutX, rVWireAboutX)
         }
@@ -419,6 +423,8 @@ class WorldBuilder(gegede.builder.Builder):
         # Define materials first
         self.construct_materials(geom)
         
+        geom.structure.Position('center', x=Q('0m'), y=Q('0m'), z=Q('0m'))
+
         # Define standard rotations and store in geometry
         self.construct_rotations(geom)
        

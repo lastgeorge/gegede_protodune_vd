@@ -19,31 +19,27 @@ void gl()
 
   TGeoNode *det = world->GetDaughter(0);
   TGeoNode *cryo = det->GetDaughter(0);
-
   TGeoNode *argon = cryo->GetDaughter(1);
 
   TEveGeoTopNode* top = new TEveGeoTopNode(gGeoManager, det);
   gEve->AddGlobalElement(top);
-
-
    int nDaughters = det->GetNdaughters();
    for (int i=0; i<nDaughters; i++) {
      TGeoNode *node = det->GetDaughter(i);
      TString name(node->GetName());
     //  cout << i << " " << name << endl;
-
-  //   if (name.Contains("Foam") || name.Contains("Steel") 
-  //       || name.Contains("Concrete") || name.Contains("Neck")) {
-  //     node->SetInvisible();
-  //     node->SetAllInvisible();
-  //   }
+    if (name.Contains("Foam") || name.Contains("Steel") 
+        || name.Contains("Concrete") || name.Contains("Neck")) {
+      node->SetInvisible();
+      node->SetAllInvisible();
+    }
    }
 
   nDaughters = cryo->GetNdaughters();
   for (int i=0; i<nDaughters; i++) {
     TGeoNode *node = cryo->GetDaughter(i);
     TString name(node->GetName());
-     cout << i << " " << name << endl;
+    //  cout << i << " " << name << endl;
      if (name.Contains("argon") || name.Contains("cryostat_steel")) {
        node->SetInvisible();
        //node->SetAllInvisible();
@@ -54,15 +50,27 @@ void gl()
   //   }
    }
 
+TGeoNode *special = 0;
+
 nDaughters = argon->GetNdaughters();
 for (int i = 0; i < nDaughters; i++) {
     TGeoNode *node = argon->GetDaughter(i);
     TString name(node->GetName());
 
-    // if (name.Contains("gasAr")) {
-    //     node->SetInvisible();  // Hide this node and its descendants
-    // }
+    // cout << i << " " << name << endl;
 
+    // Check for TPC volumes and draw them
+    if (name.Contains("volTPC_0_0")) {
+        special = node;
+
+        // Optional: make other volumes invisible to focus on TPCs
+        // node->GetVolume()->SetVisibility(kTRUE);
+    } else {
+        // Optional: make non-TPC volumes invisible
+        // node->SetVisibility(kFALSE);
+    }
+
+    // Keep existing Cathode Arapuca handling
     if (name.Contains("volCathodeArapucaMesh")) {
         node->SetVisibility(kFALSE);  // Hide the parent node
 
@@ -96,7 +104,8 @@ for (int i = 0; i < nDaughters; i++) {
     }
 }
 
-argon->Draw("ogl");
+//argon->Draw("ogl");
+special->Draw("ogl");
 
 // Redraw the scene to apply changes
 gEve->Redraw3D(kTRUE);
