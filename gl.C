@@ -15,8 +15,13 @@ static int gPrintLevel = 6;
 static TString gPreviousName = "";
 static int gNameCounter = 0;
 
-// Add these after other static variables
-static std::vector<TString> gInvisiblePatterns;
+// Replace std::vector<TString> gInvisiblePatterns with:
+struct InvisiblePattern {
+    TString pattern;
+    bool setAllInvisible;
+    InvisiblePattern(const TString& p, bool all) : pattern(p), setAllInvisible(all) {}
+};
+static std::vector<InvisiblePattern> gInvisiblePatterns;
 
 // Add these global variables after other static variables
 static TGeoNode* gSpecialNode = nullptr;
@@ -68,12 +73,14 @@ void printVolumeSummary() {
     }
 }
 
-// Add this helper function before traverseNode
-bool shouldBeInvisible(const TString& name) {
+// Update shouldBeInvisible to return pair<bool, bool>
+std::pair<bool, bool> shouldBeInvisible(const TString& name) {
     for (const auto& pattern : gInvisiblePatterns) {
-        if (name.Contains(pattern)) return true;
+        if (name.Contains(pattern.pattern)) {
+            return std::make_pair(true, pattern.setAllInvisible);
+        }
     }
-    return false;
+    return std::make_pair(false, false);
 }
 
 // Add this helper function before traverseNode
@@ -120,9 +127,12 @@ void traverseNode(TGeoNode* node, const TString& targetVolume, const TString& sp
     }
 
     // Check and set invisibility
-    if (shouldBeInvisible(originalName)) {
+    auto [isInvisible, setAll] = shouldBeInvisible(originalName);
+    if (isInvisible) {
         node->SetInvisible();
-       //node->SetAllInvisible();
+        if (setAll) {
+            node->SetAllInvisible();
+        }
     }
         
     // Check if this is our target volume
@@ -160,13 +170,13 @@ void gl()
     // Define special volume to draw with ogl
     TString specialVolume = "volTPC_1";  // Change this to your desired special volume
 
-    // Initialize invisible patterns
+    // Initialize invisible patterns with flags
     gInvisiblePatterns = {
-        "Foam",
-        "Steel",
-        "Concrete",
-        "cryostat_steel",
-        "argon"  // Add any other patterns you want
+        InvisiblePattern("Foam", true),
+        InvisiblePattern("Steel", true),
+        InvisiblePattern("Concrete", true),
+        InvisiblePattern("cryostat_steel", false),
+        InvisiblePattern("argon", false)
     };
 
     // Initialize name mappings
@@ -199,6 +209,12 @@ void gl()
     // Draw special volume if found
     if (gSpecialNode) {
         gSpecialNode->Draw("ogl");
+        // std::cout << "test " << std::endl;
+        // TGLViewer * v = (TGLViewer *)gPad->GetViewer3D();
+        // v->SetStyle(TGLRnrCtx::kOutline);
+        // v->SetSmoothPoints(kTRUE);
+        // v->SetLineScale(0.5);
+        // v->UpdateScene();
     }
     
     // Redraw the scene

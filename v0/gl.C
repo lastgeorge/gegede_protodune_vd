@@ -155,10 +155,10 @@ void gl()
     // Define target volume name to be printed by the main gEve ...
     //TString targetVolume = "volTPC_1";  // Change this to your desired volume name
     //TString targetVolume = "cryostat_argon_volum";
-    TString targetVolume = "detenclosure";
+    TString targetVolume = "volDetEnclosure";
 
     // Define special volume to draw with ogl
-    TString specialVolume = "volTPC_1";  // Change this to your desired special volume
+    TString specialVolume = "volCryostat_0";  // Change this to your desired special volume
 
     // Initialize invisible patterns
     gInvisiblePatterns = {
