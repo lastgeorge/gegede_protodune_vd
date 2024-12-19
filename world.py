@@ -264,6 +264,15 @@ class WorldBuilder(gegede.builder.Builder):
         ar = geom.matter.Element("Argon", "Ar", 18, "39.948g/mole")
         c = geom.matter.Element("Carbon", "C", 6, "12.0107g/mole")
         h = geom.matter.Element("Hydrogen", "H", 1, "1.00794g/mole")
+        # After existing elements...
+        cu = geom.matter.Element("Copper", "Cu", 29, "63.546g/mole")
+        be = geom.matter.Element("Beryllium", "Be", 4, "9.012g/mole")
+        si = geom.matter.Element("Silicon", "Si", 14, "28.0855g/mole")
+        ca = geom.matter.Element("Calcium", "Ca", 20, "40.078g/mole")
+        mg = geom.matter.Element("Magnesium", "Mg", 12, "24.305g/mole")
+        na = geom.matter.Element("Sodium", "Na", 11, "22.99g/mole")
+        ti = geom.matter.Element("Titanium", "Ti", 22, "47.867g/mole")
+        p = geom.matter.Element("Phosphorus", "P", 15, "30.974g/mole")
         
         # Define air
         air = geom.matter.Mixture("Air", density = "0.001225g/cc",
@@ -288,6 +297,12 @@ class WorldBuilder(gegede.builder.Builder):
                                             ("STEEL_STAINLESS_Fe7Cr2Ni", self.steel["FracMassOfSteel"]),
                                             ("Air", self.steel["FracMassOfAir"])))
 
+        # After elements and before other material definitions...
+        vacuum = geom.matter.Mixture("Vacuum",
+                                density="1e-25g/cc",  
+                                components=(("Air", 1.0),))  # Using air components at very low density
+
+
         # Define liquid argon
         lar = geom.matter.Molecule("LAr", density = "1.390g/cc",
                                 elements = (("Argon", 1),))
@@ -305,6 +320,86 @@ class WorldBuilder(gegede.builder.Builder):
                                     ("Oxygen", 0.248),
                                     ("Hydrogen", 0.094),
                                     ("Iron", 0.089)))
+
+        # After existing materials...
+        copper_beryllium = geom.matter.Mixture("Copper_Beryllium_alloy25",
+                                            density = "8.26g/cc",
+                                            components = (
+                                                ("Copper", 0.981),
+                                                ("Beryllium", 0.019)))
+        
+        # After other material definitions...
+        aluminum = geom.matter.Mixture("ALUMINUM_Al",
+                                    density="2.699g/cc",
+                                    components=(("Aluminum", 1.0),))
+
+        # Define oxide compounds
+        sio2 = geom.matter.Molecule("SiO2", density="2.2g/cc",
+                                elements=(("Silicon", 1), ("Oxygen", 2)))
+
+        al2o3 = geom.matter.Molecule("Al2O3", density="3.97g/cc",
+                                    elements=(("Aluminum", 2), ("Oxygen", 3)))
+
+        fe2o3 = geom.matter.Molecule("Fe2O3", density="5.24g/cc",
+                                    elements=(("Iron", 2), ("Oxygen", 3)))
+
+        cao = geom.matter.Molecule("CaO", density="3.35g/cc",
+                                elements=(("Calcium", 1), ("Oxygen", 1)))
+
+        mgo = geom.matter.Molecule("MgO", density="3.58g/cc",
+                                elements=(("Magnesium", 1), ("Oxygen", 1)))
+
+        na2o = geom.matter.Molecule("Na2O", density="2.27g/cc",
+                                elements=(("Sodium", 2), ("Oxygen", 1)))
+
+        tio2 = geom.matter.Molecule("TiO2", density="4.23g/cc",
+                                elements=(("Titanium", 1), ("Oxygen", 2)))
+
+        # Define Glass mixture
+        glass = geom.matter.Mixture("Glass", density="2.74351g/cc",
+                                components=(("SiO2", 0.600),
+                                            ("Al2O3", 0.118),
+                                            ("Fe2O3", 0.001),
+                                            ("CaO", 0.224),
+                                            ("MgO", 0.034),
+                                            ("Na2O", 0.010),
+                                            ("TiO2", 0.013)))
+        # Define GlassWool mixture
+        glass_wool = geom.matter.Mixture("GlassWool", 
+                                       density="0.035g/cc",
+                                       components=(("SiO2", 0.65),
+                                                 ("Al2O3", 0.09),
+                                                 ("CaO", 0.07),
+                                                 ("MgO", 0.03),
+                                                 ("Na2O", 0.16)))
+
+        # Define Delrin
+        delrin = geom.matter.Molecule("Delrin", density="1.41g/cc",
+                                    elements=(("Carbon", 1),
+                                            ("Hydrogen", 2),
+                                            ("Oxygen", 1)))
+        
+        # Define Nitrogen gas at 1atm, 80K
+        nigas = geom.matter.Mixture("NiGas1atm80K",
+                                   density="0.0039g/cc",
+                                   components=(("Nitrogen", 1.0),))
+        
+        # Define ProtoDUNEBWFoam
+        proto_foam = geom.matter.Molecule("ProtoDUNEBWFoam", 
+                                        density="0.021g/cc",
+                                        elements=(("Carbon", 17),
+                                                ("Hydrogen", 16),
+                                                ("Nitrogen", 2),
+                                                ("Oxygen", 4)))
+        
+        # Define ProtoDUNE RPUF foam
+        rpuf_foam = geom.matter.Molecule("foam_protoDUNE_RPUF_assayedSample",
+                                        density="0.09g/cc",
+                                        elements=(("Carbon", 54),
+                                                ("Hydrogen", 60),
+                                                ("Nitrogen", 4),
+                                                ("Oxygen", 15)))
+
 
     def construct_rotations(self, geom):
         """Define standard rotations used throughout the geometry"""

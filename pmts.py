@@ -181,7 +181,7 @@ class PMTBuilder(gegede.builder.Builder):
         coat_vol.params.append(("SensDet","PhotonDetector"))
 
         pmt_main_vol = geom.structure.Volume("allpmt",
-            material="LAr",
+            material="Glass",
             shape=solid_pmt)
 
         # Create TPB-coated PMT volume

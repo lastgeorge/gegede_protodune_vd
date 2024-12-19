@@ -22,7 +22,7 @@ void gl()
   TGeoNode *argon = cryo->GetDaughter(1);
 
   TEveGeoTopNode* top = new TEveGeoTopNode(gGeoManager, det);
-  gEve->AddGlobalElement(top);
+  //gEve->AddGlobalElement(top);
    int nDaughters = det->GetNdaughters();
    for (int i=0; i<nDaughters; i++) {
      TGeoNode *node = det->GetDaughter(i);
@@ -57,11 +57,15 @@ for (int i = 0; i < nDaughters; i++) {
     TGeoNode *node = argon->GetDaughter(i);
     TString name(node->GetName());
 
-    // cout << i << " " << name << endl;
+    
 
     // Check for TPC volumes and draw them
-    if (name.Contains("volTPC_0_0")) {
+    if (name.Contains("volTPC")) {
+      cout << i << " " << name << endl;
         special = node;
+        TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, node);
+        gEve->AddGlobalElement(eveNode);
+        break;
 
         // Optional: make other volumes invisible to focus on TPCs
         // node->GetVolume()->SetVisibility(kTRUE);
@@ -105,7 +109,7 @@ for (int i = 0; i < nDaughters; i++) {
 }
 
 //argon->Draw("ogl");
-special->Draw("ogl");
+// special->Draw("ogl");
 
 // Redraw the scene to apply changes
 gEve->Redraw3D(kTRUE);

@@ -9,38 +9,74 @@ import math
 from collections import namedtuple
 
 
-def line_clip(x0: float, y0: float, nx: float, ny: float, rcl: float, rcw: float) -> list:
-    """Line clipping algorithm for rectangular boundary.
+# def line_clip(x0: float, y0: float, nx: float, ny: float, rcl: float, rcw: float) -> list:
+#     """Line clipping algorithm for rectangular boundary.
     
-    Args:
-        x0, y0: Starting point coordinates
-        nx, ny: Direction vector components 
-        rcl: Rectangle length
-        rcw: Rectangle width
+#     Args:
+#         x0, y0: Starting point coordinates
+#         nx, ny: Direction vector components 
+#         rcl: Rectangle length
+#         rcw: Rectangle width
         
-    Returns:
-        List of intersection points [x1,y1,x2,y2]
-    """
-    if abs(nx) < 1e-4: return [x0, 0, x0, rcw]  # Vertical line
-    if abs(ny) < 1e-4: return [0, y0, rcl, y0]  # Horizontal line
+#     Returns:
+#         List of intersection points [x1,y1,x2,y2]
+#     """
+#     if abs(nx) < 1e-4: return [x0, 0, x0, rcw]  # Vertical line
+#     if abs(ny) < 1e-4: return [0, y0, rcl, y0]  # Horizontal line
     
-    # Check all edge intersections
-    intersections = []
-    edges = [
-        (0, lambda x: y0 - x0 * ny/nx),           # Left edge
-        (rcl, lambda x: y0 + (x-x0) * ny/nx),     # Right edge
-        (x0 - y0 * nx/ny, lambda x: 0),           # Bottom edge
-        (x0 + (rcw-y0) * nx/ny, lambda x: rcw)    # Top edge
-    ]
+#     # Check all edge intersections
+#     intersections = []
+#     edges = [
+#         (0, lambda x: y0 - x0 * ny/nx),           # Left edge
+#         (rcl, lambda x: y0 + (x-x0) * ny/nx),     # Right edge
+#         (x0 - y0 * nx/ny, lambda x: 0),           # Bottom edge
+#         (x0 + (rcw-y0) * nx/ny, lambda x: rcw)    # Top edge
+#     ]
     
-    for x, get_y in edges:
-        y = get_y(x)
-        if 0 <= x <= rcl and 0 <= y <= rcw:
-            intersections.extend([x, y])
-            if len(intersections) == 4:
-                break
+#     for x, get_y in edges:
+#         y = get_y(x)
+#         if 0 <= x <= rcl and 0 <= y <= rcw:
+#             intersections.extend([x, y])
+#             if len(intersections) == 4:
+#                 break
                 
-    return intersections
+#     return intersections
+
+def line_clip(x0, y0, nx, ny, rcl, rcw):
+    tol = 1.0E-4
+    endpts = []
+    
+    if abs(nx) < tol:
+        return [x0, 0, x0, rcw]
+    if abs(ny) < tol:
+        return [0, y0, rcl, y0]
+        
+    # Left border
+    y = y0 - x0 * ny/nx
+    if 0 <= y <= rcw:
+        endpts.extend([0, y])
+        
+    # Right border
+    y = y0 + (rcl-x0) * ny/nx
+    if 0 <= y <= rcw:
+        endpts.extend([rcl, y])
+        if len(endpts) == 4:
+            return endpts
+            
+    # Bottom border
+    x = x0 - y0 * nx/ny
+    if 0 <= x <= rcl:
+        endpts.extend([x, 0])
+        if len(endpts) == 4:
+            return endpts
+            
+    # Top border
+    x = x0 + (rcw-y0)* nx/ny
+    if 0 <= x <= rcl:
+        endpts.extend([x, rcw])
+        
+    # print(endpts)
+    return endpts
 
 
 def split_wires(wires, width, theta_deg):
@@ -133,8 +169,8 @@ def generate_wires(length, width, nch, pitch, theta_deg, dia, w1offx, w1offy):
     alpha = theta if theta <= math.pi/2 else math.pi - theta
     
     # Calculate wire spacing
-    dX = pitch / math.sin(alpha)
-    dY = pitch / math.sin(math.pi/2 - alpha)
+    # dX = pitch / math.sin(alpha)
+    # dY = pitch / math.sin(math.pi/2 - alpha)
     
     # Starting point adjusted for direction
     orig = [w1offx, w1offy]
@@ -178,6 +214,7 @@ def generate_wires(length, width, nch, pitch, theta_deg, dia, w1offx, w1offy):
 
         # Store wire info
         wire = [ch, wcn[0], wcn[1], wlen] + endpts
+
         winfo.append(wire)
         
         offset += pitch
@@ -371,6 +408,8 @@ class TPCBuilder(gegede.builder.Builder):
                     rot=rot)
                 vols['plane_Z'].placements.append(place.name)
 
+        #print(self.params['padWidth'])
+
         # Define placements
         placements = {
             'active': (-self.params['ReadoutPlane']/2, 0, 0),
@@ -530,7 +569,7 @@ class TPCBuilder(gegede.builder.Builder):
                         myposTPCY = posY + CRP_y/4 + pcbOffsetY
                         myposTPCZ = posZ + CRP_z/4 + pcbOffsetZ
 
-                # print(f'volTP_{quad}')
+                # print(f'volTPC_{quad}')
 
                 # Get TPC volume for this quadrant
                 tpc_vol = self.get_volume(f'volTPC_{quad}')
