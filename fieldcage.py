@@ -235,203 +235,208 @@ class FieldCageBuilder(gegede.builder.Builder):
         
         return result
     
-    # def construct_slim_profile(self, geom, fc_slim_corner):
-    #     """Construct the slim field cage profile through extrusions and Boolean operations"""
+    def construct_slim_profile(self, geom, fc_slim_corner):
+        """Construct the slim field cage profile through extrusions and Boolean operations"""
         
-    #     # Create the extruded profile for long field cage
-    #     long_vertices = [
-    #         # Vertex coordinates from PERL script 
-    #         (Q('3.719961039mm'), Q('-0.1389959507mm')),
-    #         (Q('3.571767039mm'), Q('1.831707049mm')),
-    #         (Q('3.129995039mm'), Q('3.452312049mm')),
-    #         (Q('2.779043039mm'), Q('4.059650951mm')),
-    #         (Q('2.404897039mm'), Q('4.869304049mm')),
-    #         (Q('2.357290039mm'), Q('4.929363049mm')),
-    #         (Q('2.300893039mm'), Q('4.981365049mm')),
-    #         (Q('2.218862039mm'), Q('5.034099049mm')),
-    #         (Q('2.108022039mm'), Q('5.075359049mm')),
-    #         (Q('1.990712039mm'), Q('5.089275049mm')),
-    #         (Q('-1.277475961mm'), Q('5.089275049mm')),
-    #         (Q('-1.277475961mm'), Q('3.089275049mm')),
-    #         (Q('-1.292001961mm'), Q('2.969646049mm')),
-    #         (Q('-1.334726961mm'), Q('2.856853049mm')),
-    #         (Q('-1.403207961mm'), Q('2.757732049mm')),
-    #         (Q('-1.493417961mm'), Q('2.677898049mm')),
-    #         (Q('-1.600229961mm'), Q('2.621746049mm')),
-    #         (Q('-1.717172961mm'), Q('2.592937049mm')),
-    #         (Q('-1.837778961mm'), Q('2.592937049mm')),
-    #         (Q('-1.954721961mm'), Q('2.621746049mm')),
-    #         (Q('-2.061533961mm'), Q('2.677898049mm')),
-    #         (Q('-2.151743961mm'), Q('2.757732049mm')),
-    #         (Q('-2.220224961mm'), Q('2.856853049mm')),
-    #         (Q('-2.262949961mm'), Q('2.969646049mm')),
-    #         (Q('-2.277475961mm'), Q('3.089275049mm')),
-    #         (Q('-2.277475961mm'), Q('6.372722049mm')),
-    #         (Q('-2.250742961mm'), Q('6.602214049mm')),
-    #         (Q('-2.172128961mm'), Q('6.819500049mm')),
-    #         (Q('-2.045663961mm'), Q('7.013103049mm')),
-    #         (Q('-1.878183961mm'), Q('7.172283049mm')),
-    #         (Q('-1.678598961mm'), Q('7.288738049mm')),
-    #         (Q('-1.036630961mm'), Q('7.502361049mm')),
-    #         (Q('-0.3783059606mm'), Q('7.587810049mm')),
-    #         (Q('0.4213770394mm'), Q('7.515545049mm')),
-    #         (Q('1.198232039mm'), Q('7.255291049mm')),
-    #         (Q('2.028676039mm'), Q('6.743816049mm')),
-    #         (Q('2.970571039mm'), Q('5.791179049mm')),
-    #         (Q('3.796865039mm'), Q('4.436443049mm')),
-    #         (Q('4.324453039mm'), Q('3.021892049mm')),
-    #         (Q('4.633535039mm'), Q('1.497966049mm')),
-    #         (Q('4.700551039mm'), Q('-0.6121409507mm')),
-    #         (Q('4.413686039mm'), Q('-2.505695951mm')),
-    #         (Q('4.633535039mm'), Q('-1.497966049mm')),
-    #         (Q('4.324453039mm'), Q('-3.021892049mm')),
-    #         (Q('3.796865039mm'), Q('-4.436443049mm')),
-    #         (Q('2.970571039mm'), Q('-5.791179049mm')),
-    #         (Q('2.028676039mm'), Q('-6.743816049mm')),
-    #         (Q('1.198232039mm'), Q('-7.255291049mm')),
-    #         (Q('0.4213770394mm'), Q('-7.515545049mm')),
-    #         (Q('-0.3783059606mm'), Q('-7.587810049mm')),
-    #         (Q('-1.036630961mm'), Q('-7.502361049mm')),
-    #         (Q('-1.678598961mm'), Q('-7.288738049mm')),
-    #         (Q('-1.878183961mm'), Q('-7.172283049mm')),
-    #         (Q('-2.045663961mm'), Q('-7.013103049mm')),
-    #         (Q('-2.172128961mm'), Q('-6.819500049mm')),
-    #         (Q('-2.250742961mm'), Q('-6.602214049mm')),
-    #         (Q('-2.277475961mm'), Q('-6.372722049mm')),
-    #         (Q('-2.277475961mm'), Q('-3.089275049mm')),
-    #         (Q('-2.262949961mm'), Q('-2.969646049mm')),
-    #         (Q('-2.220224961mm'), Q('-2.856853049mm')),
-    #         (Q('-2.151743961mm'), Q('-2.757732049mm')),
-    #         (Q('-2.061533961mm'), Q('-2.677898049mm')),
-    #         (Q('-1.954721961mm'), Q('-2.621746049mm')),
-    #         (Q('-1.837778961mm'), Q('-2.592937049mm')),
-    #         (Q('-1.717172961mm'), Q('-2.592937049mm')),
-    #         (Q('-1.600229961mm'), Q('-2.621746049mm')),
-    #         (Q('-1.493417961mm'), Q('-2.677898049mm')),
-    #         (Q('-1.403207961mm'), Q('-2.757732049mm')),
-    #         (Q('-1.334726961mm'), Q('-2.856853049mm')),
-    #         (Q('-1.292001961mm'), Q('-2.969646049mm')),
-    #         (Q('-1.277475961mm'), Q('-3.089275049mm')),
-    #         (Q('-1.277475961mm'), Q('-5.089275049mm')),
-    #         (Q('1.990712039mm'), Q('-5.089275049mm')),
-    #         (Q('2.108022039mm'), Q('-5.075359049mm')),
-    #         (Q('2.218862039mm'), Q('-5.034099049mm')),
-    #         (Q('2.300893039mm'), Q('-4.981365049mm')),
-    #         (Q('2.357290039mm'), Q('-4.929363049mm')),
-    #         (Q('2.404897039mm'), Q('-4.869304049mm')),
-    #         (Q('2.779043039mm'), Q('-4.059650951mm')),
-    #         (Q('3.129995039mm'), Q('-3.452312049mm')),
-    #         (Q('3.571767039mm'), Q('-1.831707049mm'))
-    #     ]
+        # Create the extruded profile for long field cage
+        long_vertices = (
+            # Vertex coordinates from PERL script 
+            (Q('3.719961039mm'), Q('-0.1389959507mm')),
+            (Q('3.571767039mm'), Q('1.831707049mm')),
+            (Q('3.129995039mm'), Q('3.452312049mm')),
+            (Q('2.779043039mm'), Q('4.059650951mm')),
+            (Q('2.404897039mm'), Q('4.869304049mm')),
+            (Q('2.357290039mm'), Q('4.929363049mm')),
+            (Q('2.300893039mm'), Q('4.981365049mm')),
+            (Q('2.218862039mm'), Q('5.034099049mm')),
+            (Q('2.108022039mm'), Q('5.075359049mm')),
+            (Q('1.990712039mm'), Q('5.089275049mm')),
+            (Q('-1.277475961mm'), Q('5.089275049mm')),
+            (Q('-1.277475961mm'), Q('3.089275049mm')),
+            (Q('-1.292001961mm'), Q('2.969646049mm')),
+            (Q('-1.334726961mm'), Q('2.856853049mm')),
+            (Q('-1.403207961mm'), Q('2.757732049mm')),
+            (Q('-1.493417961mm'), Q('2.677898049mm')),
+            (Q('-1.600229961mm'), Q('2.621746049mm')),
+            (Q('-1.717172961mm'), Q('2.592937049mm')),
+            (Q('-1.837778961mm'), Q('2.592937049mm')),
+            (Q('-1.954721961mm'), Q('2.621746049mm')),
+            (Q('-2.061533961mm'), Q('2.677898049mm')),
+            (Q('-2.151743961mm'), Q('2.757732049mm')),
+            (Q('-2.220224961mm'), Q('2.856853049mm')),
+            (Q('-2.262949961mm'), Q('2.969646049mm')),
+            (Q('-2.277475961mm'), Q('3.089275049mm')),
+            (Q('-2.277475961mm'), Q('6.372722049mm')),
+            (Q('-2.250742961mm'), Q('6.602214049mm')),
+            (Q('-2.172128961mm'), Q('6.819500049mm')),
+            (Q('-2.045663961mm'), Q('7.013103049mm')),
+            (Q('-1.878183961mm'), Q('7.172283049mm')),
+            (Q('-1.678598961mm'), Q('7.288738049mm')),
+            (Q('-1.036630961mm'), Q('7.502361049mm')),
+            (Q('-0.3783059606mm'), Q('7.587810049mm')),
+            (Q('0.4213770394mm'), Q('7.515545049mm')),
+            (Q('1.198232039mm'), Q('7.255291049mm')),
+            (Q('2.028676039mm'), Q('6.743816049mm')),
+            (Q('2.970571039mm'), Q('5.791179049mm')),
+            (Q('3.796865039mm'), Q('4.436443049mm')),
+            (Q('4.324453039mm'), Q('3.021892049mm')),
+            (Q('4.633535039mm'), Q('1.497966049mm')),
+            (Q('4.700551039mm'), Q('-0.6121409507mm')),
+            (Q('4.413686039mm'), Q('-2.505695951mm')),
+            (Q('4.633535039mm'), Q('-1.497966049mm')),
+            (Q('4.324453039mm'), Q('-3.021892049mm')),
+            (Q('3.796865039mm'), Q('-4.436443049mm')),
+            (Q('2.970571039mm'), Q('-5.791179049mm')),
+            (Q('2.028676039mm'), Q('-6.743816049mm')),
+            (Q('1.198232039mm'), Q('-7.255291049mm')),
+            (Q('0.4213770394mm'), Q('-7.515545049mm')),
+            (Q('-0.3783059606mm'), Q('-7.587810049mm')),
+            (Q('-1.036630961mm'), Q('-7.502361049mm')),
+            (Q('-1.678598961mm'), Q('-7.288738049mm')),
+            (Q('-1.878183961mm'), Q('-7.172283049mm')),
+            (Q('-2.045663961mm'), Q('-7.013103049mm')),
+            (Q('-2.172128961mm'), Q('-6.819500049mm')),
+            (Q('-2.250742961mm'), Q('-6.602214049mm')),
+            (Q('-2.277475961mm'), Q('-6.372722049mm')),
+            (Q('-2.277475961mm'), Q('-3.089275049mm')),
+            (Q('-2.262949961mm'), Q('-2.969646049mm')),
+            (Q('-2.220224961mm'), Q('-2.856853049mm')),
+            (Q('-2.151743961mm'), Q('-2.757732049mm')),
+            (Q('-2.061533961mm'), Q('-2.677898049mm')),
+            (Q('-1.954721961mm'), Q('-2.621746049mm')),
+            (Q('-1.837778961mm'), Q('-2.592937049mm')),
+            (Q('-1.717172961mm'), Q('-2.592937049mm')),
+            (Q('-1.600229961mm'), Q('-2.621746049mm')),
+            (Q('-1.493417961mm'), Q('-2.677898049mm')),
+            (Q('-1.403207961mm'), Q('-2.757732049mm')),
+            (Q('-1.334726961mm'), Q('-2.856853049mm')),
+            (Q('-1.292001961mm'), Q('-2.969646049mm')),
+            (Q('-1.277475961mm'), Q('-3.089275049mm')),
+            (Q('-1.277475961mm'), Q('-5.089275049mm')),
+            (Q('1.990712039mm'), Q('-5.089275049mm')),
+            (Q('2.108022039mm'), Q('-5.075359049mm')),
+            (Q('2.218862039mm'), Q('-5.034099049mm')),
+            (Q('2.300893039mm'), Q('-4.981365049mm')),
+            (Q('2.357290039mm'), Q('-4.929363049mm')),
+            (Q('2.404897039mm'), Q('-4.869304049mm')),
+            (Q('2.779043039mm'), Q('-4.059650951mm')),
+            (Q('3.129995039mm'), Q('-3.452312049mm')),
+            (Q('3.571767039mm'), Q('-1.831707049mm'))
+        )
 
-    #     # Create long profile extrusion
-    #     long_fc_slim = geom.shapes.Xtru(
-    #         "LongFCProfileSlim",
-    #         vertices=long_vertices,
-    #         sections=[
-    #         (-5*self.width, Q('0mm'), Q('0mm'), Q('1.0')),
-    #         (5*self.width, Q('0mm'), Q('0mm'), Q('1.0'))
-    #         ]
-    #     )
+        zsections=[
+            dict(z=-0.5*self.width, offset=(Q('0mm'), Q('0mm')), scale = 1.0),
+            dict(z=0.5*self.width, offset=(Q('0mm'), Q('0mm')), scale = 1.0),
+            ]
 
-    #     # Create short profile using same vertex list but different extrusion length
-    #     short_fc_slim = geom.shapes.Xtru(
-    #         "ShortFCProfileSlim",  
-    #         vertices=long_vertices,
-    #         sections=[
-    #         (-5*self.length, Q('0mm'), Q('0mm'), Q('1.0')),
-    #         (5*self.length, Q('0mm'), Q('0mm'), Q('1.0'))
-    #         ]
-    #     )
+        # Create long profile extrusion
+        long_fc_slim = geom.shapes.ExtrudedMany(
+            "LongFCProfileSlim",
+            polygon = long_vertices,
+            zsections = zsections)
 
-    #     # Define complete slim field cage assembly parameters
-    #     slim_assembly_params = [
-    #         {
-    #             'name': "FSunion1_Slim",
-    #             'second': fc_slim_corner,
-    #             'pos': {
-    #                 'x': -self.tor_rad,
-    #                 'y': Q('0cm'),
-    #                 'z': 0.5*self.width
-    #             },
-    #             'rot': "rPlus90AboutX"
-    #         },
-    #         {
-    #             'name': "FSunion2_Slim",
-    #             'second': short_fc_slim,
-    #             'pos': {
-    #                 'x': -(0.5*self.length + self.tor_rad),
-    #                 'y': Q('0cm'),
-    #                 'z': 0.5*self.width + self.tor_rad
-    #             },
-    #             'rot': geom.structure.Rotation("rot2", x="0deg", y="-90deg", z="0deg")
-    #         },
-    #         {
-    #             'name': "FSunion3_Slim",
-    #             'second': fc_slim_corner,
-    #             'pos': {
-    #                 'x': -(self.length + self.tor_rad),
-    #                 'y': Q('0cm'),
-    #                 'z': 0.5*self.width
-    #             },
-    #             'rot': geom.structure.Rotation("rot3", x="90deg", y="-90deg", z="0deg")
-    #         },
-    #         {
-    #             'name': "FSunion4_Slim",
-    #             'second': long_fc_slim,
-    #             'pos': {
-    #                 'x': -(self.length + 2*self.tor_rad),
-    #                 'y': Q('0cm'),
-    #                 'z': Q('0cm')
-    #             },
-    #             'rot': geom.structure.Rotation("rot4", x="0deg", y="0deg", z="180deg")
-    #         },
-    #         {
-    #             'name': "FSunion5_Slim",
-    #             'second': fc_slim_corner,
-    #             'pos': {
-    #                 'x': -(self.length + self.tor_rad),
-    #                 'y': Q('0cm'),
-    #                 'z': -0.5*self.width
-    #             },
-    #             'rot': geom.structure.Rotation("rot5", x="90deg", y="180deg", z="0deg")
-    #         },
-    #         {
-    #             'name': "FSunion6_Slim",
-    #             'second': short_fc_slim,
-    #             'pos': {
-    #                 'x': -(0.5*self.length + self.tor_rad),
-    #                 'y': Q('0cm'),
-    #                 'z': -(0.5*self.width + self.tor_rad)
-    #             },
-    #             'rot': geom.structure.Rotation("rot6", x="270deg", y="90deg", z="90deg")
-    #         },
-    #         {
-    #             'name': "FieldShaperSolidSlim",
-    #             'second': fc_slim_corner,
-    #             'pos': {
-    #                 'x': -self.tor_rad,
-    #                 'y': Q('0cm'),
-    #                 'z': -0.5*self.width
-    #             },
-    #             'rot': geom.structure.Rotation("rot7", x="90deg", y="90deg", z="0deg")
-    #         }
-    #     ]
+        # Create the extruded profile for short field cage
+        short_vertices = long_vertices  # Using the same vertices as long profile
+        zsections_short = [
+            dict(z=-0.5*self.length, offset=(Q('0mm'), Q('0mm')), scale=1.0),
+            dict(z=0.5*self.length, offset=(Q('0mm'), Q('0mm')), scale=1.0),
+        ]
 
-    #     # Build slim field cage assembly
-    #     result = long_fc_slim
-    #     for i, params in enumerate(slim_assembly_params):
-    #         pos = geom.structure.Position(f"cornerposSlim{i+1}", **params['pos'])
-    #         result = geom.shapes.Boolean(
-    #             params['name'],
-    #             type='union',
-    #             first=result,
-    #             second=params['second'],
-    #             pos=pos,
-    #             rot=params['rot']
-    #         )
+        # Create short profile extrusion
+        short_fc_slim = geom.shapes.ExtrudedMany(
+            "ShortFCProfileSlim",
+            polygon=short_vertices,
+            zsections=zsections_short
+        )
 
-    #     return result
+        # Define complete slim field cage assembly parameters
+        slim_assembly_params = [
+            {
+                'name': "FSunion1_Slim",
+                'second': fc_slim_corner,
+                'pos': {
+                    'x': -self.tor_rad,
+                    'y': Q('0cm'),
+                    'z': 0.5*self.width
+                },
+                'rot': "rPlus90AboutX"
+            },
+            {
+                'name': "FSunion2_Slim",
+                'second': short_fc_slim,
+                'pos': {
+                    'x': -(0.5*self.length + self.tor_rad),
+                    'y': Q('0cm'),
+                    'z': 0.5*self.width + self.tor_rad
+                },
+                'rot': geom.structure.Rotation("rot2", x="0deg", y="-90deg", z="0deg")
+            },
+            {
+                'name': "FSunion3_Slim",
+                'second': fc_slim_corner,
+                'pos': {
+                    'x': -(self.length + self.tor_rad),
+                    'y': Q('0cm'),
+                    'z': 0.5*self.width
+                },
+                'rot': geom.structure.Rotation("rot3", x="90deg", y="-90deg", z="0deg")
+            },
+            {
+                'name': "FSunion4_Slim",
+                'second': long_fc_slim,
+                'pos': {
+                    'x': -(self.length + 2*self.tor_rad),
+                    'y': Q('0cm'),
+                    'z': Q('0cm')
+                },
+                'rot': geom.structure.Rotation("rot4", x="0deg", y="0deg", z="180deg")
+            },
+            {
+                'name': "FSunion5_Slim",
+                'second': fc_slim_corner,
+                'pos': {
+                    'x': -(self.length + self.tor_rad),
+                    'y': Q('0cm'),
+                    'z': -0.5*self.width
+                },
+                'rot': geom.structure.Rotation("rot5", x="90deg", y="180deg", z="0deg")
+            },
+            {
+                'name': "FSunion6_Slim",
+                'second': short_fc_slim,
+                'pos': {
+                    'x': -(0.5*self.length + self.tor_rad),
+                    'y': Q('0cm'),
+                    'z': -(0.5*self.width + self.tor_rad)
+                },
+                'rot': geom.structure.Rotation("rot6", x="270deg", y="90deg", z="90deg")
+            },
+            {
+                'name': "FieldShaperSolidSlim",
+                'second': fc_slim_corner,
+                'pos': {
+                    'x': -self.tor_rad,
+                    'y': Q('0cm'),
+                    'z': -0.5*self.width
+                },
+                'rot': geom.structure.Rotation("rot7", x="90deg", y="90deg", z="0deg")
+            }
+        ]
+
+        # Build slim field cage assembly
+        result = long_fc_slim
+        for i, params in enumerate(slim_assembly_params):
+            pos = geom.structure.Position(f"cornerposSlim{i+1}", **params['pos'])
+            result = geom.shapes.Boolean(
+                params['name'],
+                type='union',
+                first=result,
+                second=params['second'],
+                pos=pos,
+                rot=params['rot']
+            )
+
+        return result
 
     def construct(self, geom):
         """Construct the Field Cage geometry"""
@@ -462,33 +467,30 @@ class FieldCageBuilder(gegede.builder.Builder):
         fc_shape = self.construct_thick_profile(geom, fc_corner)
         
         # Then build the slim field cage profile 
-        # fc_slim_shape = self.construct_slim_profile(geom, fc_slim_corner)
+        fc_slim_shape = self.construct_slim_profile(geom, fc_slim_corner)
 
         # Create volumes
         fc_vol = geom.structure.Volume(
             "volFieldShaper",
             material="ALUMINUM_Al",
             shape=fc_shape
-            #shape = fc_corner
         )
 
-        # fc_slim_vol = geom.structure.Volume(
-        #     "volFieldShaperSlim",
-        #     material="ALUMINUM_Al", 
-        #     shape=fc_slim_shape
-        # )
+        fc_slim_vol = geom.structure.Volume(
+            "volFieldShaperSlim",
+            material="ALUMINUM_Al", 
+            shape=fc_slim_shape
+        )
 
         self.add_volume(fc_vol)
-        # self.add_volume(fc_slim_vol)
+        self.add_volume(fc_slim_vol)
 
     def place_in_volume(self, geom, volume, offset_x):
         """Place field cage shapers in the given volume"""
         
         # Get field cage volumes
         fc_vol = self.get_volume('volFieldShaper')
-        # fc_slim_vol = self.get_volume('volFieldShaperSlim')
-        
-        # print(self.n_shapers)
+        fc_slim_vol = self.get_volume('volFieldShaperSlim')
 
         # Place field cage shapers
         for i in range(self.n_shapers):
@@ -497,20 +499,19 @@ class FieldCageBuilder(gegede.builder.Builder):
             pos_x = offset_x - self.first_shaper_to_roof - dist
             
             if i < 36 or i > 77:  # Slim shapers at start and end
-                # # Create placement for slim shaper
-                # pos = geom.structure.Position(
-                #     f"posFieldShaper{i}",
-                #     x=pos_x,
-                #     y=Q('0cm'),
-                #     z=0.5*self.length + self.tor_rad
-                # )
-                # place = geom.structure.Placement(
-                #     f"placeFieldShaper{i}",
-                #     volume=fc_slim_vol,
-                #     pos=pos,
-                #     rot="rPlus90AboutXPlus90AboutZ"
-                # )
-                continue
+                #Create placement for slim shaper
+                pos = geom.structure.Position(
+                    f"posFieldShaper{i}",
+                    x=pos_x,
+                    y=Q('0cm'),
+                    z=0.5*self.length + self.tor_rad
+                )
+                place = geom.structure.Placement(
+                    f"placeFieldShaper{i}",
+                    volume=fc_slim_vol,
+                    pos=pos,
+                    rot="rPlus90AboutXPlus90AboutZ"
+                )
             else:  # Thick shapers in middle
                 # Create placement for thick shaper
                 pos = geom.structure.Position(
