@@ -166,7 +166,8 @@ void gl()
         "Steel",
         "Concrete",
         "cryostat_steel",
-        "argon"  // Add any other patterns you want
+        "argon",  // Add any other patterns you want
+        "volFieldShaper"
     };
 
     // Initialize name mappings

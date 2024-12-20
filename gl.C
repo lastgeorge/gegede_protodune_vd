@@ -172,9 +172,8 @@ void gl()
 
     // Initialize invisible patterns with flags
     gInvisiblePatterns = {
-        InvisiblePattern("Foam", true),
-        InvisiblePattern("Steel", true),
-        InvisiblePattern("Concrete", true),
+        // InvisiblePattern("Foam", true),
+        InvisiblePattern("Steel", false),
         InvisiblePattern("cryostat_steel", false),
         InvisiblePattern("argon", false)
     };

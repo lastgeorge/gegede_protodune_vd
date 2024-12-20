@@ -107,8 +107,11 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                     cryostat_parameters=self.cryo,
                     beam_parameters=beam_parameters,
                     FoamPadding=self.FoamPadding,
-                    print_config=print_config,  
-                    print_construct=print_construct,  
+                    OriginXSet=self.OriginXSet,  # Add these three lines
+                    OriginYSet=self.OriginYSet,
+                    OriginZSet=self.OriginZSet,
+                    print_config=print_config,
+                    print_construct=print_construct,
                     **kwds)
             if name == 'cryostat':
                 builder.configure(cryostat_parameters=self.cryo,
@@ -185,6 +188,10 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         # Place steel support structure
         steel_builder = self.get_builder("steelsupport")
         steel_builder.place_in_volume(geom, main_lv)
+
+        # Place beam elements - add this
+        beam_builder = self.get_builder("beamelements")
+        beam_builder.place_in_volume(geom, main_lv, cryo_vol)
 
         # Place CRT modules
         crt_builder = self.get_builder('crt')
