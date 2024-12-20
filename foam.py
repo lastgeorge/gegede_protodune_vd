@@ -76,7 +76,7 @@ class FoamBuilder(gegede.builder.Builder):
             second=foam_block
         )
 
-        # Get beam window parameters
+        # Get beam window parameters   These are the same as the beam elements ... 
         bw_foam_rem = geom.shapes.CutTubs(
             "BeamWindowFoamRemp",
             rmin=Q('0cm'),
@@ -87,7 +87,6 @@ class FoamBuilder(gegede.builder.Builder):
             normalm=(-0.71030185483404029, 0, -0.70389720486682006),
             normalp=(0.71030185483404018, 0, 0.70389720486682017)
         )
-
         bw_steel_plate = geom.shapes.CutTubs(
             "BeamWindowStPlatep",
             rmin=Q('0cm'),
