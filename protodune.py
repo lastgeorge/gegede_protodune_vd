@@ -143,10 +143,15 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
                     print_construct=print_construct,  
                     **kwds)
             if name == 'foam':
-                builder.configure(FoamPadding=self.FoamPadding,
-                    print_config=print_config,  
-                    print_construct=print_construct,  
-                    **kwds)
+                builder.configure(
+                    FoamPadding=self.FoamPadding,
+                    cryostat_parameters=self.cryo,
+                    steel_parameters=self.steel,
+                    beam_parameters=beam_parameters,
+                    print_config=print_config,
+                    print_construct=print_construct,
+                    **kwds
+                )
 
     def construct(self, geom):
         if self.print_construct:
@@ -184,14 +189,17 @@ class ProtoDUNEVDBuilder(gegede.builder.Builder):
         # Add the cryostat placement to the detector enclosure volume
         main_lv.placements.append(cryo_place.name)
 
+        # Place beam elements - add this
+        beam_builder = self.get_builder("beamelements")
+        beam_builder.place_in_volume(geom, main_lv, cryo_vol)
 
         # Place steel support structure
         steel_builder = self.get_builder("steelsupport")
         steel_builder.place_in_volume(geom, main_lv)
 
-        # Place beam elements - add this
-        beam_builder = self.get_builder("beamelements")
-        beam_builder.place_in_volume(geom, main_lv, cryo_vol)
+        # Place foam padding
+        foam_builder = self.get_builder("foam")
+        foam_builder.place_in_volume(geom, main_lv)
 
         # Place CRT modules
         crt_builder = self.get_builder('crt')

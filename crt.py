@@ -324,8 +324,7 @@ class CRTBuilder(gegede.builder.Builder):
             geom: Geometry object
             enclosure_vol: The detector enclosure volume to place CRT modules in
         '''
-        if self.print_construct:
-            print('Place CRT modules <- DetEnclosure <- ProtoDUNE-VD <- World')
+        
 
         self.calculate_positions()
 

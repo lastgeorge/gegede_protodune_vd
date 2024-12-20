@@ -278,7 +278,8 @@ class BeamElementsBuilder(gegede.builder.Builder):
                                            self.beam['BeamPlIIDSPosDZ'] * self.beam['DeltaIIYZ3'])
             self.beam['BeamPlIIDSCap_z'] = (self.beam['BeamPlIIMem_z'] + 
                                            self.beam['BeamPlIIDSPosDZ'])
-
+            
+            self.print_construct = print_construct
             self._configured = True
 
     def construct_rotations(self, geom):
@@ -436,9 +437,10 @@ class BeamElementsBuilder(gegede.builder.Builder):
 
         return volumes
 
-    def construct(self, geom, print_construct=False):  # Add this line
-        if print_construct:
+    def construct(self, geom):  # Add this line
+        if self.print_construct:
             print('Construct Beam Elements <- ProtoDUNE-VD <- World')
+
         self.construct_rotations(geom)
         
         # Create all beam-related shapes

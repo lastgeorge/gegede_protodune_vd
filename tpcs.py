@@ -409,7 +409,7 @@ class TPCBuilder(gegede.builder.Builder):
         CRP_z = self.params['lengthCRP']
 
         if self.print_construct:
-            print(f"CRP dimensions: {CRP_x} x {CRP_y} x {CRP_z}")
+            print(f"Construct CRP dimensions: {CRP_x} x {CRP_y} x {CRP_z}")
 
         # Generate wire configurations for first CRU
         if self.params.get('wires_on', 1):  # Check if wires are enabled
