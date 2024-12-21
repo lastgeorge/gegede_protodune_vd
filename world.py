@@ -379,6 +379,12 @@ class WorldBuilder(gegede.builder.Builder):
                                             ("Hydrogen", 2),
                                             ("Oxygen", 1)))
         
+        # Define Polystyrene
+        polystyrene = geom.matter.Molecule("Polystyrene",
+                                          density="1.06g/cc",
+                                          elements=(("Carbon", 8),
+                                                  ("Hydrogen", 8)))
+
         # Define Nitrogen gas at 1atm, 80K
         nigas = geom.matter.Mixture("NiGas1atm80K",
                                    density="0.0039g/cc",
