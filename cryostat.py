@@ -182,9 +182,9 @@ class CryostatBuilder(gegede.builder.Builder):
                                         material='STEEL_STAINLESS_Fe7Cr2Ni',
                                         shape=steel_shape)
         
-        argon_vol = geom.structure.Volume(self.name + '_argon_volume',
-                                        material='LAr', 
-                                        shape=argon_shape)
+        # argon_vol = geom.structure.Volume(self.name + '_argon_volume',
+        #                                 material='LAr', 
+        #                                 shape=argon_shape)
 
         gas_ar_vol = geom.structure.Volume(self.name + '_gasAr_volume',
                                         material='GAr',
@@ -192,7 +192,7 @@ class CryostatBuilder(gegede.builder.Builder):
 
         # Create the main cryostat volume
         cryo_vol = geom.structure.Volume(self.name + '_volume',
-                                    material='Air',
+                                    material='LAr',
                                     shape=cryo_shape)
 
         # Create and place gaseous argon volume
@@ -207,18 +207,19 @@ class CryostatBuilder(gegede.builder.Builder):
         
         # Create positions for steel and argon volumes
         steel_pos = geom.structure.Position("steel_pos", x=Q('0cm'), y=Q('0cm'), z=Q('0cm'))
-        argon_pos = geom.structure.Position("argon_pos", x=Q('0cm'), y=Q('0cm'), z=Q('0cm'))
+        # argon_pos = geom.structure.Position("argon_pos", x=Q('0cm'), y=Q('0cm'), z=Q('0cm'))
         
         # Create placements using the position objects
         steel_place = geom.structure.Placement(self.name + '_steel_place',
                                         volume=steel_vol,
                                         pos=steel_pos)
-        argon_place = geom.structure.Placement(self.name + '_argon_place',
-                                        volume=argon_vol, 
-                                        pos=argon_pos)
+        # argon_place = geom.structure.Placement(self.name + '_argon_place',
+        #                                 volume=argon_vol, 
+        #                                 pos=argon_pos)
         
         cryo_vol.placements.append(steel_place.name)
-        cryo_vol.placements.append(argon_place.name)
+        # cryo_vol.placements.append(argon_place.name)
+        argon_vol = cryo_vol
         argon_vol.placements.append(gas_ar_place.name)
         argon_vol.params.append(("SensDet", "SimEnergyDeposit"))
         argon_vol.params.append(("StepLimit", "0.47625*cm"))
