@@ -3,7 +3,7 @@
 #include <TCanvas.h>
 #include <iostream>
 
-void checkGeometryOverlaps(const char* gdmlFile) {
+void checkGeometryOverlaps(const char* gdmlFile, bool fullCheck = false) {
     // Load the GDML geometry file
     TGeoManager::Import(gdmlFile);
 
@@ -28,44 +28,27 @@ void checkGeometryOverlaps(const char* gdmlFile) {
     double tolerance = 0.001; // Tolerance for overlaps in cm
     std::cout << "Checking overlaps with a tolerance of " << tolerance << " cm..." << std::endl;
 
-    // // Create a canvas for visualization
-    // TCanvas *c1 = new TCanvas("c1", "Geometry Visualization", 800, 600);
-    
-    // // Draw the geometry
-    // gGeoManager->GetTopVolume()->Draw("ogl");
-    
-    // // Set some visualization options
-    // gGeoManager->SetVisLevel(4);  // Set visualization depth
-    // gGeoManager->SetVisOption(0); // Set visualization option
+    if (fullCheck) {
+        std::cout << "Performing full geometry check..." << std::endl;
+        checker.CheckGeometryFull();
+        checker.PrintOverlaps();
+    } else {
+        std::cout << "Performing basic overlap check..." << std::endl;
+        // Standard overlap checks
+        gGeoManager->CheckOverlaps(tolerance,"s");
+        gGeoManager->PrintOverlaps();
+        
+        gGeoManager->CheckOverlaps(tolerance);
+        gGeoManager->PrintOverlaps();
+    }
 
-    // Check for overlaps in the geometry - pass the top volume and tolerance
-    // checker.CheckOverlaps(topVolume, tolerance,"s");
-
-    gGeoManager->CheckOverlaps(tolerance,"s");
-    gGeoManager->PrintOverlaps();
-
-    gGeoManager->CheckOverlaps(tolerance);
-    gGeoManager->PrintOverlaps();
-
-    // You can also check recursive overlaps
-    // std::cout << "\nPerforming recursive overlap check..." << std::endl;
-    // topVolume->CheckOverlaps(tolerance, "s"); // 's' option for recursive check
-    
-    // checker.CheckGeometryFull();
-    // checker.PrintOverlaps();
-
-    // // Update the canvas
-    // c1->Update();
-    // c1->Draw();
-
-    // Report completion
     std::cout << "Overlap checking completed." << std::endl;
-    // std::cout << "The geometry should be visible in the ROOT canvas." << std::endl;
+    std::cout << "Check type: " << (fullCheck ? "Full" : "Basic") << std::endl;
 }
 
-void check_overlap() {
+void check_overlap(bool fullCheck = false) {
     // Replace "geometry.gdml" with the path to your GDML file
     const char* gdmlFile = "protodune.gdml";
     //const char* gdmlFile = "./v0/protodunevd_v4_refactored_nowires.gdml";
-    checkGeometryOverlaps(gdmlFile);
+    checkGeometryOverlaps(gdmlFile, fullCheck);
 }
