@@ -39,7 +39,7 @@ void checkGeometryOverlaps(const char* gdmlFile) {
     // gGeoManager->SetVisOption(0); // Set visualization option
 
     // Check for overlaps in the geometry - pass the top volume and tolerance
-    //checker.CheckOverlaps(topVolume, tolerance,"s");
+    // checker.CheckOverlaps(topVolume, tolerance,"s");
 
     gGeoManager->CheckOverlaps(tolerance,"s");
     gGeoManager->PrintOverlaps();
@@ -51,9 +51,8 @@ void checkGeometryOverlaps(const char* gdmlFile) {
     // std::cout << "\nPerforming recursive overlap check..." << std::endl;
     // topVolume->CheckOverlaps(tolerance, "s"); // 's' option for recursive check
     
-    //checker.CheckGeometryFull();
-
-    //checker.PrintOverlaps();
+    // checker.CheckGeometryFull();
+    // checker.PrintOverlaps();
 
     // // Update the canvas
     // c1->Update();
