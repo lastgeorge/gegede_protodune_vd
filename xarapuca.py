@@ -194,11 +194,13 @@ class XARAPUCABuilder(gegede.builder.Builder):
         # Create module box
         module = geom.shapes.Box(
             "ArapucaMeshModule",
-            dx=(self.params['MeshInnerStructureLength_horizontal'] + 
-            2*(self.params['MeshOuterRadius'] + self.params['MeshTorRad']))/2,
+            dx=(self.params['MeshInnerStructureLength_horizontal'] 
+             + 2*(self.params['MeshOuterRadius'] + self.params['MeshTorRad']))/2,
             dy=(2*self.params['MeshRodOuterRadius'] + Q('1cm'))/2,
             dz=(self.params['MeshInnerStructureLength_vertical'] + 
-            2*(self.params['MeshOuterRadius'] + self.params['MeshTorRad']))/2
+            2*(self.params['MeshOuterRadius'] +Q('1cm')  
+            #    + self.params['MeshTorRad'])  this volume leads to a overlapping situation
+            ))/2 
         )
 
         # Create main mesh volume
@@ -534,6 +536,9 @@ class XARAPUCABuilder(gegede.builder.Builder):
 
         # Calculate positions for 8 ARAPUCAs    
         x = frame_center_x
+
+        # print(frame_center_x, self.params['Upper_FirstFrameVertDist'], self.params['VerticalPDdist'], self.params['Lower_FirstFrameVertDist'])
+
         for i in range(8):
             
             y = frame_center_y
@@ -563,13 +568,13 @@ class XARAPUCABuilder(gegede.builder.Builder):
                 x = frame_center_x + self.params['Upper_FirstFrameVertDist']
             elif i == 1 or i == 5:
                 # Second tile position 
-                x -= self.params['VerticalPDdist']
+                x -= self.params['VerticalPDdist'] + Q('1cm') # need to add 1cm to avoid overlapping
             elif i == 2 or i == 6:
                 # First tile position from bottom anode
                 x = frame_center_x - self.params['Lower_FirstFrameVertDist']
             elif i == 3 or i == 7:
                 # Last tile position
-                x += self.params['VerticalPDdist']
+                x += self.params['VerticalPDdist'] + Q('1cm') # need to add 1cm to avoid overlapping
 
             # Store all position information
             positions.append({

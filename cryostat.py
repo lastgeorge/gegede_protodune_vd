@@ -250,7 +250,7 @@ class CryostatBuilder(gegede.builder.Builder):
         if xarapuca_builder:
             frame_center_x = (self.cryo['Argon_x']/2 - self.cryo['HeightGaseousAr'] - 
                             self.cryo['Upper_xLArBuffer'] - 
-                            (self.tpc['driftTPCActive'] + self.tpc['ReadoutPlane']))
+                            (self.tpc['driftTPCActive'] + self.tpc['ReadoutPlane'])) # -0.5*self.cathode['heightCathode']
             frame_center_y = (-self.cathode['widthCathode'] - self.xarapuca['CathodeFrameToFC'] -   self.xarapuca['FCToArapucaSpaceLat'] + self.xarapuca['ArapucaOut_y']/2)
             frame_center_z = (-0.5*self.cryo['Argon_z'] + self.cryo['zLArBuffer'] + 0.5*self.cathode['lengthCathode'])
             
