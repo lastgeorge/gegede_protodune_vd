@@ -111,7 +111,7 @@ class PMTBuilder(gegede.builder.Builder):
         mid_cylinder = geom.shapes.Tubs("pmtMiddleCylinder",
             rmin=Q('100.351822048586mm'),
             rmax=Q('102.351822048586mm'),
-            dz=Q('54mm'),
+            dz=Q('54mm')/2.,
             sphi=Q('0deg'),
             dphi=Q('360deg'))
 
@@ -153,7 +153,7 @@ class PMTBuilder(gegede.builder.Builder):
         btm_tube = geom.shapes.Tubs("pmtBtmTube",
             rmin=Q('42.25mm'),
             rmax=Q('44.25mm'),
-            dz=Q('72mm'),
+            dz=Q('72mm')/2.,
             sphi=Q('0deg'),
             dphi=Q('360deg'))
 

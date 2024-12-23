@@ -155,7 +155,7 @@ void gl()
     // Define target volume name to be printed by the main gEve ...
     //TString targetVolume = "volTPC_1";  // Change this to your desired volume name
     //TString targetVolume = "cryostat_argon_volum";
-    TString targetVolume = "volDetEnclosure";
+    TString targetVolume = "volPMT_coated";
 
     // Define special volume to draw with ogl
     TString specialVolume = "volCryostat_0";  // Change this to your desired special volume
