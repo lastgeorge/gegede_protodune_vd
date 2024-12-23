@@ -13,8 +13,9 @@ class CathodeBuilder(gegede.builder.Builder):
         super(CathodeBuilder, self).__init__(name)
         self.params = None
 
-    def configure(self, cathode_parameters=None, tpc_params=None, 
+    def configure(self, cathode_parameters=None, tpc_params=None,  
                  arapucamesh_switch=True,  # Add this line
+                 xarapuca_parameters=None,
                  print_config=False, print_construct=False, **kwargs):
         """Configure the cathode geometry.
         
@@ -77,6 +78,9 @@ class CathodeBuilder(gegede.builder.Builder):
                 self.params['lengthCathodeVoid']
             self.params['CathodeMeshInnerStructureLength_horizontal'] = \
                 self.params['widthCathodeVoid']
+
+        if xarapuca_parameters:
+            self.params['CathodeArapucaMeshRodRadius']=xarapuca_parameters['CathodeArapucaMeshRodRadius']
 
         # Update with any overrides from kwargs
         if kwargs:
@@ -341,7 +345,7 @@ class CathodeBuilder(gegede.builder.Builder):
                                 volume=double_arapuca_mesh,
                                 pos = geom.structure.Position(
                                     f"cathode_mesh_top_{i}_{j}_{idx}",
-                                    x=cathode_x + self.params['heightCathode']/2,
+                                    x=cathode_x + self.params['heightCathode']/2 - 2*self.params['CathodeArapucaMeshRodRadius'],
                                     y=base_y + i*self.params['widthCathode'] + void_y,
                                     z=base_z + j*self.params['lengthCathode'] + void_z
                                 )
@@ -353,7 +357,7 @@ class CathodeBuilder(gegede.builder.Builder):
                                 volume=double_arapuca_mesh,
                                 pos = geom.structure.Position(
                                     f"cathode_mesh_bottom_{i}_{j}_{idx}",
-                                    x=cathode_x - self.params['heightCathode']/2,
+                                    x=cathode_x - self.params['heightCathode']/2 + 2*self.params['CathodeArapucaMeshRodRadius'],
                                     y=base_y + i*self.params['widthCathode'] + void_y,
                                     z=base_z + j*self.params['lengthCathode'] + void_z
                                 )
