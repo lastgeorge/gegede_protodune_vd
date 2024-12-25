@@ -282,10 +282,11 @@ class WorldBuilder(gegede.builder.Builder):
 
         # Define stainless steel
         steel = geom.matter.Mixture("STEEL_STAINLESS_Fe7Cr2Ni", 
-                                density = "7.9300g/cc",
-                                components = (("Iron", 0.70),
-                                            ("Chromium", 0.20),
-                                            ("Nickel", 0.10)))
+                    density = "7.9300g/cc",
+                    components = (("Iron", 0.7298),
+                            ("Chromium", 0.1792), 
+                            ("Nickel", 0.0900),
+                            ("Carbon", 0.0010)))
 
         # Define air-steel mixture for support structure
         mixture_density = Q("0.001225g/cc") * self.steel["FracMassOfAir"] + \
